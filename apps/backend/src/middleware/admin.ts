@@ -21,9 +21,6 @@ declare module "hono" {
  * Reads `Authorization: Bearer <token>`, verifies against the WorkOS JWKS
  * for `WORKOS_CLIENT_ID`, and stashes the decoded payload on the Hono
  * context as `user` (typed via `ContextVariableMap`).
- *
- * TODO: also surface the verified user as an Effect `CurrentUser` Context.Tag
- * so service code can `yield* CurrentUser` instead of reaching into Hono.
  */
 export const adminMiddleware = createMiddleware(async (c, next) => {
   const header = c.req.header("authorization")
