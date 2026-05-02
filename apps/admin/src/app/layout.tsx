@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthKitProvider } from "@workos-inc/authkit-nextjs/components";
-import { withAuth } from "@workos-inc/authkit-nextjs";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,13 +18,11 @@ export const metadata: Metadata = {
   description: "Internal admin panel",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  await withAuth({ ensureSignedIn: true });
-
   return (
     <html
       lang="en"

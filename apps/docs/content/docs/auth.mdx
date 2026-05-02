@@ -14,13 +14,14 @@ WorkOS at all at runtime — it just verifies tokens against the public JWKS.
 
 ### Browser hits a protected route
 
-`apps/admin/src/app/layout.tsx` calls `await withAuth({ ensureSignedIn: true })`
-at the top of the root layout. No session cookie → 307 to
+`apps/admin/src/middleware.ts` runs `authkitMiddleware` with
+`middlewareAuth.enabled = true`. No session cookie → 307 to
 `https://api.workos.com/user_management/authorize?…&client_id=…&redirect_uri=http://localhost:3000/callback&…`.
 
-(Why not in `proxy.ts`? Next 16 forces Proxy onto the Node runtime; OpenNext
-for Cloudflare only supports Edge middleware. Layout-level enforcement is the
-working alternative.)
+(Why not `proxy.ts`? Next 16 hard-codes the new `proxy.ts` file convention to
+the Node runtime, but OpenNext for Cloudflare can only host Edge middleware.
+The deprecated `middleware.ts` filename still accepts `runtime:
+"experimental-edge"` in Next 16, so we use that.)
 
 </Step>
 
@@ -127,7 +128,7 @@ new Hono()
   .get("/me", (c) => c.json(c.get("user")))
 ```
 
-**Admin** — already protected by the root layout. Just call `withAuth()` and
+**Admin** — already protected by `middleware.ts`. Just call `withAuth()` and
 use `accessToken`:
 
 ```tsx

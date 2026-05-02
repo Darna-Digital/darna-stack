@@ -8,39 +8,48 @@ landing page reads the signed-in user, hits `/admin/me` on the backend with
 the access token, and shows whether `adminMiddleware` accepted it.
 
 <Callout type="warn">
-  Auth is enforced in the **root layout**, not in `proxy.ts`/`middleware.ts`.
-  Next 16 forces Proxy onto the Node runtime; OpenNext for Cloudflare only
-  supports Edge middleware. That combination is currently impossible, so we
-  protect at the layout level instead.
+  We use `middleware.ts` (deprecated in Next 16) rather than the new
+  `proxy.ts`. Reason: Next 16 hard-codes `proxy.ts` to the Node runtime and
+  forbids the `runtime` config. OpenNext for Cloudflare only hosts Edge
+  middleware. The deprecated `middleware.ts` filename still works in Next 16
+  *and* lets us opt into Edge via `runtime: "experimental-edge"`. Two warnings
+  appear at build time (deprecated filename, experimental runtime); both are
+  expected. Revisit when OpenNext supports Node middleware.
 </Callout>
 
 ## Layout
 
 ```text
-apps/admin/src/app/
-├── layout.tsx           wraps children in <AuthKitProvider> + enforces auth
-├── page.tsx             admin landing — withAuth + backend ping
-└── callback/route.ts    handleAuth() — OAuth code exchange
+apps/admin/src/
+├── middleware.ts             authkitMiddleware — enforces auth on every route
+└── app/
+    ├── layout.tsx            wraps children in <AuthKitProvider>
+    ├── page.tsx              admin landing — withAuth + backend ping
+    └── callback/route.ts     handleAuth() — OAuth code exchange
 ```
 
 ## Auth enforcement
 
-The root layout calls `withAuth({ ensureSignedIn: true })` before rendering
-anything. Unauthenticated requests are 307'd to the WorkOS-hosted sign-in
-page. New pages don't need their own check — they inherit the layout's.
+`middleware.ts` enables `middlewareAuth` on every path that isn't a static
+asset. Unauthenticated requests get 307'd to the WorkOS-hosted sign-in page.
 
-```tsx
-// src/app/layout.tsx
-import { withAuth } from "@workos-inc/authkit-nextjs"
+```ts
+// src/middleware.ts
+import { authkitMiddleware } from "@workos-inc/authkit-nextjs"
 
-export default async function RootLayout({ children }) {
-  await withAuth({ ensureSignedIn: true })
-  return <html>{/* … */}</html>
+export default authkitMiddleware({
+  middlewareAuth: { enabled: true, unauthenticatedPaths: [] },
+})
+
+export const config = {
+  runtime: "experimental-edge",
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 }
 ```
 
-Route handlers (e.g. `app/callback/route.ts`) bypass the layout, so the OAuth
-redirect target stays reachable without a session.
+After the user signs in, WorkOS redirects to `/callback?code=…`, which is
+handled by `handleAuth()` from the package — it exchanges the code, seals the
+session into a cookie via `iron-session`, and redirects to the original path.
 
 After the user signs in, WorkOS redirects to `/callback?code=…`, which is
 handled by `handleAuth()` from the package — it exchanges the code, seals the
@@ -56,9 +65,9 @@ import { withAuth } from "@workos-inc/authkit-nextjs"
 const { user, accessToken } = await withAuth({ ensureSignedIn: true })
 ```
 
-`accessToken` is a short-lived WorkOS JWT, refreshed transparently by AuthKit
-on each request. Pass it as `Authorization: Bearer <accessToken>` to call
-the backend.
+`accessToken` is a short-lived WorkOS JWT, refreshed transparently by
+AuthKit's middleware on each request. Pass it as
+`Authorization: Bearer <accessToken>` to call the backend.
 
 ## Calling the backend
 
