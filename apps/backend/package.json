@@ -13,7 +13,7 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
-    "@hono/node-server": "^1.19.14",
+    "@hono/node-server": "^2.0.1",
     "@hono/standard-validator": "^0.2.2",
     "@scalar/hono-api-reference": "^0.10.13",
     "effect": "^3.21.2",
@@ -24,9 +24,9 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260502.1",
-    "@types/node": "^20.11.17",
+    "@types/node": "^25.6.0",
     "tsx": "^4.7.1",
-    "typescript": "^5.8.3",
+    "typescript": "^6.0.3",
     "wrangler": "4.87.0"
   }
 }

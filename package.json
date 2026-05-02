@@ -14,7 +14,10 @@
     "deploy": "pnpm --filter @darna/backend run deploy && pnpm --filter @darna/admin run deploy && pnpm --filter @darna/docs run deploy",
     "deploy:backend": "pnpm --filter @darna/backend run deploy",
     "deploy:admin": "pnpm --filter @darna/admin run deploy",
-    "deploy:docs": "pnpm --filter @darna/docs run deploy"
+    "deploy:docs": "pnpm --filter @darna/docs run deploy",
+    "deps:check": "pnpm outdated -r || true",
+    "deps:update": "pnpm update -r -i --latest",
+    "deps:update:safe": "pnpm update -r"
   },
   "engines": {
     "node": ">=22"
