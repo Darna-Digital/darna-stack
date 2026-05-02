@@ -61,10 +61,17 @@ jobs:
         run: pnpm typecheck
 
       - name: Verify Cloudflare auth
-        # Prints the account the token can see. The "Account ID" column must
-        # match $CLOUDFLARE_ACCOUNT_ID — if not, the secret is wrong or the
-        # token wasn't scoped to this account.
-        run: pnpm --filter @darna/backend exec wrangler whoami
+        # `whoami` only proves the token can authenticate. The probe below proves
+        # it can talk to the Workers Scripts API on the target account — which
+        # is what every deploy needs. If it prints `success: false` with a 7003
+        # code, the token is missing the `Workers Scripts: Edit` permission.
+        run: |
+          pnpm --filter @darna/backend exec wrangler whoami
+          echo "--- Workers Scripts API probe ---"
+          curl -sS \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts" \
+            | python3 -c "import sys, json; d=json.load(sys.stdin); print('success:', d.get('success')); print('errors:', d.get('errors')); print('result count:', len(d.get('result') or []))"
 
       - name: Deploy backend
         run: pnpm --filter @darna/backend exec wrangler deploy $WRANGLER_ARGS
