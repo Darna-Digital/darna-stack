@@ -8,38 +8,39 @@ landing page reads the signed-in user, hits `/admin/me` on the backend with
 the access token, and shows whether `adminMiddleware` accepted it.
 
 <Callout type="warn">
-  Next.js 16 renamed `middleware.ts` → `proxy.ts`. Same semantics; different
-  filename. AuthKit's helper is still called `authkitMiddleware`.
+  Auth is enforced in the **root layout**, not in `proxy.ts`/`middleware.ts`.
+  Next 16 forces Proxy onto the Node runtime; OpenNext for Cloudflare only
+  supports Edge middleware. That combination is currently impossible, so we
+  protect at the layout level instead.
 </Callout>
 
 ## Layout
 
 ```text
-apps/admin/src/
-├── proxy.ts                 authkitMiddleware — enforces auth on every route
-├── app/
-│   ├── layout.tsx           wraps children in <AuthKitProvider>
-│   ├── page.tsx             admin landing — withAuth + backend ping
-│   └── callback/route.ts    handleAuth() — OAuth code exchange
+apps/admin/src/app/
+├── layout.tsx           wraps children in <AuthKitProvider> + enforces auth
+├── page.tsx             admin landing — withAuth + backend ping
+└── callback/route.ts    handleAuth() — OAuth code exchange
 ```
 
 ## Auth enforcement
 
-`proxy.ts` enables `middlewareAuth` on every path that isn't a static asset.
-Unauthenticated requests get 307'd to the WorkOS-hosted sign-in page.
+The root layout calls `withAuth({ ensureSignedIn: true })` before rendering
+anything. Unauthenticated requests are 307'd to the WorkOS-hosted sign-in
+page. New pages don't need their own check — they inherit the layout's.
 
-```ts
-// src/proxy.ts
-import { authkitMiddleware } from "@workos-inc/authkit-nextjs"
+```tsx
+// src/app/layout.tsx
+import { withAuth } from "@workos-inc/authkit-nextjs"
 
-export default authkitMiddleware({
-  middlewareAuth: { enabled: true, unauthenticatedPaths: [] },
-})
-
-export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
+export default async function RootLayout({ children }) {
+  await withAuth({ ensureSignedIn: true })
+  return <html>{/* … */}</html>
 }
 ```
+
+Route handlers (e.g. `app/callback/route.ts`) bypass the layout, so the OAuth
+redirect target stays reachable without a session.
 
 After the user signs in, WorkOS redirects to `/callback?code=…`, which is
 handled by `handleAuth()` from the package — it exchanges the code, seals the
