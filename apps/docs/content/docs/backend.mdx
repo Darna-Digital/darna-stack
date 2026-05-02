@@ -1,0 +1,127 @@
+---
+title: Backend
+description: Hono on Cloudflare Workers, Effect for services, hono-openapi for the spec.
+---
+
+`@darna/backend` is a Hono app with one entry per runtime — `src/index.ts` for
+local Node dev (`@hono/node-server`) and `src/worker.ts` for Cloudflare Workers.
+Both import the same `app` from `src/server.ts`, so route definitions are
+shared.
+
+## Layout
+
+```text
+apps/backend/src/
+├── index.ts                 Node entry — @hono/node-server, port 4000
+├── worker.ts                Workers entry — `export default app`
+├── server.ts                Hono app, routes, /openapi, /docs (Scalar)
+├── features/
+│   ├── todo/                model, repository, service, layer, routes
+│   └── admin/admin.routes.ts
+├── middleware/
+│   └── admin.ts             adminMiddleware (WorkOS JWT verify)
+└── lib/
+    ├── auth/workos.ts       jose + JWKS verifier
+    └── effect/
+        ├── runtime.ts       AppRuntime (ManagedRuntime)
+        ├── api-route.ts     runRoute — Hono ↔ Effect bridge
+        └── current-user.ts  Context.Tag (reserved for future use)
+```
+
+## Routes
+
+| Path | Auth | Notes |
+|---|---|---|
+| `GET /health` | — | Liveness check |
+| `GET /openapi` | — | OpenAPI 3.1 spec, generated from route metadata |
+| `GET /docs` | — | Scalar API reference UI, points at `/openapi` |
+| `GET /todos`, `POST /todos`, … | — | Demo CRUD against an in-memory repo |
+| `GET /admin/me` | Bearer | Returns the verified WorkOS user |
+
+## Effect
+
+Services use the `Effect.Service` pattern with `accessors: true`, so you call
+methods directly on the class:
+
+```ts
+// src/features/todo/todo.service.ts
+export class Todos extends Effect.Service<Todos>()("Todos", {
+  accessors: true,
+  effect: Effect.gen(function* () {
+    const repo = yield* TodoRepository
+    return {
+      list: () => repo.list().pipe(Effect.withSpan("Todos.list")),
+      // …
+    }
+  }),
+}) {}
+```
+
+A single `ManagedRuntime` provides every service:
+
+```ts
+// src/lib/effect/runtime.ts
+const AppLayer = Layer.mergeAll(TodosLive)
+export const AppRuntime = ManagedRuntime.make(AppLayer)
+```
+
+Hono handlers call `runRoute` to execute an Effect against `AppRuntime`:
+
+```ts
+// src/features/todo/todo.routes.ts
+.get("/", describeRoute({ /* … */ }), (c) =>
+  runRoute("GET /todos", c, Todos.list()),
+)
+```
+
+`runRoute` wraps the effect in `Effect.withSpan(name)`, runs it, serializes
+success values as JSON, and renders failures via `.toResponse()` when the
+error implements `RenderableError`. Anything else becomes a 500.
+
+## OpenAPI
+
+Routes use `hono-openapi`'s `describeRoute` + `validator` + `resolver`:
+
+```ts
+.post(
+  "/",
+  describeRoute({
+    operationId: "todo.create",
+    summary: "Create a todo",
+    responses: ok(Todo),
+  }),
+  validator("json", CreateTodo),
+  (c) => runRoute("POST /todos", c, Todos.create(c.req.valid("json"))),
+)
+```
+
+The Zod schemas double as request validators and OpenAPI schema sources.
+`/openapi` returns the spec; `/docs` renders it with Scalar.
+
+## adminMiddleware
+
+`src/middleware/admin.ts` reads `Authorization: Bearer <token>`, verifies
+against the WorkOS JWKS for `WORKOS_CLIENT_ID`, and stashes the payload as
+`c.get("user")`. 401 on missing or invalid tokens.
+
+```ts
+// src/features/admin/admin.routes.ts
+export const adminRoutes = new Hono()
+  .use("*", adminMiddleware)
+  .get("/me", describeRoute({ /* … */ }), (c) => c.json(c.get("user")))
+```
+
+JWKS is fetched lazily on first verification, so module load works on Workers
+even if the env binding hasn't been resolved yet.
+
+See [Auth](/docs/auth) for the end-to-end flow.
+
+## Local dev
+
+```bash
+pnpm dev:backend       # tsx watch on Node, port 4000
+pnpm --filter @darna/backend dev:cf   # wrangler dev (Workers runtime)
+```
+
+`pnpm dev:backend` reads `apps/backend/.env` via Node 22's
+`--env-file-if-exists`. `wrangler dev` reads `.dev.vars`.

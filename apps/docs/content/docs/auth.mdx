@@ -1,0 +1,131 @@
+---
+title: Auth
+description: How the WorkOS handshake works across admin and backend.
+---
+
+WorkOS AuthKit handles sign-in for the admin app. The backend doesn't talk to
+WorkOS at all at runtime — it just verifies tokens against the public JWKS.
+
+## Flow
+
+<Steps>
+
+<Step>
+
+### Browser hits a protected route
+
+`apps/admin/src/proxy.ts` runs `authkitMiddleware` with
+`middlewareAuth.enabled = true`. No session cookie → 307 to
+`https://api.workos.com/user_management/authorize?…&client_id=…&redirect_uri=http://localhost:3000/callback&…`.
+
+</Step>
+
+<Step>
+
+### User signs in at WorkOS
+
+Hosted UI. WorkOS redirects back to `/callback?code=…&state=…`.
+
+</Step>
+
+<Step>
+
+### Callback exchanges the code
+
+`apps/admin/src/app/callback/route.ts` is just `export const GET = handleAuth()`.
+The package exchanges the code at `https://api.workos.com/sso/token` using
+`WORKOS_API_KEY`, gets back an access token + refresh token + user, seals
+them into a cookie with `WORKOS_COOKIE_PASSWORD` (iron-session), and 307s
+to the originally-requested path.
+
+</Step>
+
+<Step>
+
+### Server component reads the session
+
+```tsx
+const { user, accessToken } = await withAuth({ ensureSignedIn: true })
+```
+
+AuthKit unseals the cookie, refreshes the access token if it's near expiry,
+and returns a typed `user` plus a short-lived JWT.
+
+</Step>
+
+<Step>
+
+### Admin calls backend with Bearer token
+
+```tsx
+fetch(`${BACKEND_URL}/admin/me`, {
+  headers: { Authorization: `Bearer ${accessToken}` },
+})
+```
+
+</Step>
+
+<Step>
+
+### Backend verifies against JWKS
+
+`apps/backend/src/middleware/admin.ts` reads the header. Using `jose`:
+
+```ts
+const jwks = createRemoteJWKSet(
+  new URL(`https://api.workos.com/sso/jwks/${WORKOS_CLIENT_ID}`),
+)
+const { payload } = await jwtVerify(token, jwks)
+c.set("user", payload)
+```
+
+Cached after the first call. No round-trip to WorkOS per request.
+
+</Step>
+
+</Steps>
+
+## What lives where
+
+| Concern | Owner | File |
+|---|---|---|
+| Session cookie | Admin | sealed via `iron-session` in `handleAuth()` |
+| Access token issuance | WorkOS | code exchange at `/sso/token` |
+| Access token verification | Backend | `verifyWorkOSAccessToken` in `lib/auth/workos.ts` |
+| Per-request user object | Admin | `withAuth({ ensureSignedIn: true })` |
+| Per-request user object | Backend | `c.get("user")` after `adminMiddleware` |
+
+## The two clients
+
+- **Admin** uses `WORKOS_API_KEY` (server-only, code-exchange auth) and
+  `WORKOS_CLIENT_ID` (public-ish, identifies the application).
+- **Backend** uses only `WORKOS_CLIENT_ID` — that's enough to fetch the JWKS
+  and verify signatures. No API key needed unless you start calling the
+  WorkOS REST API directly.
+
+The two `WORKOS_CLIENT_ID` values must match. That's the load-bearing
+piece — if they drift, every request to `/admin/me` returns 401.
+
+<Callout type="info">
+  WorkOS access tokens are short-lived (~5 min). AuthKit's session cookie
+  carries a longer-lived refresh token and exchanges it transparently when
+  `withAuth()` is called. You don't have to think about token expiry in
+  the admin code.
+</Callout>
+
+## Adding a new protected route
+
+**Backend** — apply `adminMiddleware` to a sub-app or per-route:
+
+```ts
+new Hono()
+  .use("*", adminMiddleware)
+  .get("/me", (c) => c.json(c.get("user")))
+```
+
+**Admin** — already protected by `proxy.ts`. Just call `withAuth()` and use
+`accessToken`:
+
+```tsx
+const { accessToken } = await withAuth({ ensureSignedIn: true })
+```

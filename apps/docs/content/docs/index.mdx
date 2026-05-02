@@ -1,34 +1,87 @@
 ---
-title: Welcome
-description: The Darna stack documentation.
+title: Architecture
+description: How the darna-stack monorepo fits together.
 ---
 
-This is the home of `@darna/docs` — a [Fumadocs](https://fumadocs.dev) site running
-inside the `darna-stack` monorepo.
+A pnpm monorepo with three apps. Each one ships independently to Cloudflare
+Workers. Auth crosses every boundary — WorkOS issues access tokens, the backend
+verifies them.
 
-## What's here
+## Layout
 
-- `@darna/backend` — Hono + Effect, with `hono-openapi` for `/openapi` and Scalar at `/docs`.
-- `@darna/admin` — Next.js admin app.
-- `@darna/docs` — this site.
-
-All three deploy to Cloudflare Workers (the backend natively, the Next.js apps via
-[OpenNext](https://opennext.js.org/cloudflare)).
-
-## Getting started
-
-```bash
-pnpm dev          # all apps in parallel
-pnpm dev:backend  # http://localhost:4000
-pnpm dev:admin    # http://localhost:3000
-pnpm dev:docs     # http://localhost:3001
+```text
+darna-stack/
+├── apps/
+│   ├── backend/   Hono + Effect API on :4000
+│   ├── admin/     Next.js 16 admin panel on :3000
+│   └── docs/      Fumadocs site on :3001 (this app)
+├── infra/         deploy notes, env templates
+├── package.json   workspace root
+└── pnpm-workspace.yaml
 ```
 
-## Next steps
+## Request flow
+
+```text
+        ┌─────────────────┐
+        │     WorkOS      │  hosted sign-in, JWKS
+        └────┬───────┬────┘
+   OAuth     │       │ JWT verify
+   callback  ▼       ▼
+   ┌──────────────┐  ┌──────────────┐
+   │    admin     │  │   backend    │
+   │   :3000      │──▶  :4000       │   Bearer <accessToken>
+   │  Next 16     │  │  Hono+Effect │
+   │  AuthKit     │  │  hono-openapi│
+   └──────────────┘  └──────────────┘
+                            │
+                            ▼
+                     /openapi  /docs
+```
+
+The admin obtains a WorkOS access token via AuthKit, forwards it as
+`Authorization: Bearer …` to the backend, and the backend's `adminMiddleware`
+verifies the JWT against the WorkOS JWKS for the same `WORKOS_CLIENT_ID`.
+
+## Apps
 
 <Cards>
-  <Card title="Fumadocs" href="https://fumadocs.dev" />
-  <Card title="Hono" href="https://hono.dev" />
-  <Card title="Effect" href="https://effect.website" />
-  <Card title="Cloudflare Workers" href="https://developers.cloudflare.com/workers/" />
+  <Card title="Backend" href="/docs/backend" description="Hono routes, Effect services, OpenAPI spec, Scalar docs viewer, adminMiddleware." />
+  <Card title="Admin" href="/docs/admin" description="Next.js 16 with WorkOS AuthKit. proxy.ts enforces auth on every route." />
+  <Card title="Auth" href="/docs/auth" description="The WorkOS handshake end-to-end. What lives where." />
+  <Card title="Deploy" href="/docs/deploy" description="Cloudflare Workers via wrangler (backend) and OpenNext (Next.js apps)." />
 </Cards>
+
+## Conventions
+
+- **Package names** — `@darna/backend`, `@darna/admin`, `@darna/docs`. Workspace
+  filters use these (`pnpm --filter @darna/backend …`).
+- **Ports** — backend `4000`, admin `3000`, docs `3001`. Hardcoded in each
+  app's `dev` script so `pnpm dev` (parallel) doesn't collide.
+- **Wrangler** — every deployable app has its own `wrangler.jsonc`.
+  `compatibility_date` is the same across all three.
+- **Env files** — `.env` (Node dev), `.env.local` (Next.js dev),
+  `.dev.vars` (`wrangler dev`), all gitignored. Each app has a `.example`
+  next to it. Production secrets go through `wrangler secret put`.
+- **Effect runtime** — backend code provides services through one
+  `ManagedRuntime` (`src/lib/effect/runtime.ts`). HTTP handlers go through
+  `runRoute(span, c, effect)` which adds an OTel span and renders
+  `RenderableError` failures.
+
+<Callout type="info">
+  Every change to a Next.js app needs `turbopack.root` pinned to the monorepo
+  root — pnpm's symlink farm under `node_modules/.pnpm` lives outside the app
+  directory, and Turbopack refuses to compile anything outside its root. See
+  [Deploy](/docs/deploy) for the exact config.
+</Callout>
+
+## Top-level scripts
+
+| Command | What it does |
+|---|---|
+| `pnpm dev` | All three apps in parallel |
+| `pnpm dev:backend` / `dev:admin` / `dev:docs` | One app at a time |
+| `pnpm typecheck` | Recursive `tsc --noEmit` |
+| `pnpm deploy` | Backend → admin → docs to Cloudflare Workers |
+| `pnpm deps:check` | `pnpm outdated -r` |
+| `pnpm deps:update` | Interactive `pnpm update -r -i --latest` |

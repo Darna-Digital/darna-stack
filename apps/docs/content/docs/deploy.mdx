@@ -1,0 +1,118 @@
+---
+title: Deploy
+description: All three apps target Cloudflare Workers. Backend native, Next.js apps via OpenNext.
+---
+
+Every app has its own `wrangler.jsonc` next to its source. Wrangler resolves
+paths relative to that file — the monorepo root doesn't get involved.
+
+## Targets
+
+| App | Adapter | Entry |
+|---|---|---|
+| `@darna/backend` | native (Hono is fetch-native) | `src/worker.ts` |
+| `@darna/admin`   | `@opennextjs/cloudflare` | `.open-next/worker.js` |
+| `@darna/docs`    | `@opennextjs/cloudflare` | `.open-next/worker.js` |
+
+Pages was deprecated for new Next.js deployments. OpenNext compiles a
+Next.js app into a single Worker plus a static-asset binding.
+
+## Prerequisites
+
+- Node ≥ 22 (Wrangler v4 requires it).
+- A Cloudflare account.
+- `wrangler login` once, or `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`
+  in CI.
+
+## Commands
+
+```bash
+pnpm deploy             # backend → admin → docs
+pnpm deploy:backend     # individually
+pnpm deploy:admin
+pnpm deploy:docs
+
+# local Workers preview (closer-to-prod than `pnpm dev`)
+pnpm --filter @darna/backend dev:cf
+pnpm --filter @darna/admin   preview
+pnpm --filter @darna/docs    preview
+```
+
+First deploy of each Worker creates a `*.workers.dev` subdomain. No DNS or
+custom domain needed.
+
+## The pnpm + Turbopack gotcha
+
+OpenNext invokes `next build` with `NEXT_PRIVATE_OUTPUT_TRACE_ROOT` set to
+the app directory. That overrides `turbopack.root`, which means Turbopack
+can't follow the symlink from `apps/admin/node_modules/next` into
+`node_modules/.pnpm/next@…/`.
+
+Fix: pin `turbopack.root` to the monorepo root in each Next.js app.
+
+```ts
+// apps/admin/next.config.ts
+import path from "node:path"
+
+const nextConfig: NextConfig = {
+  turbopack: {
+    root: path.resolve(process.cwd(), "../.."),
+  },
+}
+```
+
+```js
+// apps/docs/next.config.mjs
+const config = {
+  turbopack: {
+    root: path.resolve(import.meta.dirname, "../.."),
+  },
+}
+```
+
+<Callout type="warn">
+  Don't use `import.meta.dirname` in `next.config.ts`. Next compiles `.ts`
+  configs to CommonJS, but referencing `import.meta` forces ESM output and
+  the compiled file then collides with `exports`. `process.cwd()` works in
+  TS configs; `import.meta.dirname` works in `.mjs`.
+</Callout>
+
+The other foot-gun is stray per-app `pnpm-lock.yaml` files. `create-next-app`
+and `create-hono` write one before they know they're inside a workspace.
+OpenNext's `findPackagerAndRoot` stops at the first lockfile it finds, so
+those strays make it think each app is its own monorepo. Delete them — the
+root lockfile is the only one that should exist.
+
+## Environment
+
+- **Non-secret config** — `vars` block in `wrangler.jsonc`.
+- **Secrets** — `wrangler secret put NAME` from the app directory.
+- **Local secrets** — `apps/<app>/.dev.vars` (`wrangler dev` reads it).
+- **Local Node dev** — `apps/<app>/.env` (Node 22's `--env-file-if-exists=.env`).
+
+## Cloudflare credentials
+
+For interactive use:
+
+```bash
+pnpm --filter @darna/backend exec wrangler login
+```
+
+Saves a token in `~/.config/.wrangler/`. One login covers all three apps.
+
+For CI, create a token at
+[dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens)
+using the **Edit Cloudflare Workers** template, then export
+`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
+
+## Custom domains
+
+Add a `routes` block to the relevant `wrangler.jsonc`:
+
+```jsonc
+"routes": [
+  { "pattern": "api.example.com", "custom_domain": true }
+]
+```
+
+The zone has to already be on Cloudflare and in your account.
