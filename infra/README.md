@@ -6,6 +6,7 @@ Deployment orchestration for `darna-stack`. Both apps deploy to **Cloudflare Wor
 |---|---|---|---|
 | `@darna/backend` | Workers | native (Hono is fetch-native) | [apps/backend/wrangler.jsonc](../apps/backend/wrangler.jsonc) |
 | `@darna/admin`   | Workers | [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare) | [apps/admin/wrangler.jsonc](../apps/admin/wrangler.jsonc) |
+| `@darna/docs`    | Workers | [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare) (Fumadocs) | [apps/docs/wrangler.jsonc](../apps/docs/wrangler.jsonc) |
 
 Workers (not Pages) is the current recommended target for Next.js on Cloudflare.
 
@@ -24,12 +25,13 @@ Workers (not Pages) is the current recommended target for Next.js on Cloudflare.
 From the monorepo root:
 
 ```bash
-# both apps
+# all apps
 pnpm deploy
 
 # individually
 pnpm --filter @darna/backend run deploy
 pnpm --filter @darna/admin   run deploy
+pnpm --filter @darna/docs    run deploy
 ```
 
 First deploy of each Worker creates the script and a default `*.workers.dev` URL.
@@ -39,6 +41,7 @@ First deploy of each Worker creates the script and a default `*.workers.dev` URL
 ```bash
 pnpm --filter @darna/backend run dev:cf      # wrangler dev
 pnpm --filter @darna/admin   run preview     # opennext build + wrangler preview
+pnpm --filter @darna/docs    run preview     # opennext build + wrangler preview
 ```
 
 Use these to catch Workers-runtime-only issues (no Node built-ins, request size limits, etc.).

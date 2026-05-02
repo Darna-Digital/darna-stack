@@ -7,12 +7,14 @@
     "dev": "pnpm -r --parallel run dev",
     "dev:backend": "pnpm --filter @darna/backend dev",
     "dev:admin": "pnpm --filter @darna/admin dev",
+    "dev:docs": "pnpm --filter @darna/docs dev",
     "build": "pnpm -r run build",
     "lint": "pnpm -r run lint",
     "typecheck": "pnpm -r run typecheck",
-    "deploy": "pnpm --filter @darna/backend run deploy && pnpm --filter @darna/admin run deploy",
+    "deploy": "pnpm --filter @darna/backend run deploy && pnpm --filter @darna/admin run deploy && pnpm --filter @darna/docs run deploy",
     "deploy:backend": "pnpm --filter @darna/backend run deploy",
-    "deploy:admin": "pnpm --filter @darna/admin run deploy"
+    "deploy:admin": "pnpm --filter @darna/admin run deploy",
+    "deploy:docs": "pnpm --filter @darna/docs run deploy"
   },
   "engines": {
     "node": ">=22"

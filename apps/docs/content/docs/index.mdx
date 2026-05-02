@@ -1,0 +1,34 @@
+---
+title: Welcome
+description: The Darna stack documentation.
+---
+
+This is the home of `@darna/docs` — a [Fumadocs](https://fumadocs.dev) site running
+inside the `darna-stack` monorepo.
+
+## What's here
+
+- `@darna/backend` — Hono + Effect, with `hono-openapi` for `/openapi` and Scalar at `/docs`.
+- `@darna/admin` — Next.js admin app.
+- `@darna/docs` — this site.
+
+All three deploy to Cloudflare Workers (the backend natively, the Next.js apps via
+[OpenNext](https://opennext.js.org/cloudflare)).
+
+## Getting started
+
+```bash
+pnpm dev          # all apps in parallel
+pnpm dev:backend  # http://localhost:4000
+pnpm dev:admin    # http://localhost:3000
+pnpm dev:docs     # http://localhost:3001
+```
+
+## Next steps
+
+<Cards>
+  <Card title="Fumadocs" href="https://fumadocs.dev" />
+  <Card title="Hono" href="https://hono.dev" />
+  <Card title="Effect" href="https://effect.website" />
+  <Card title="Cloudflare Workers" href="https://developers.cloudflare.com/workers/" />
+</Cards>
