@@ -1,5 +1,6 @@
 import { Hono } from "hono"
 import { openAPIRouteHandler } from "hono-openapi"
+import { Scalar } from "@scalar/hono-api-reference"
 import { todoRoutes } from "@/features/todo/todo.routes.js"
 
 // TODO: add CorsMiddleware, LoggerMiddleware, ErrorMiddleware (see opencode/server/middleware.ts)
@@ -18,5 +19,7 @@ app.get(
     },
   }),
 )
+
+app.get("/docs", Scalar({ url: "/openapi", pageTitle: "Darna Backend — API" }))
 
 export type AppType = typeof app
