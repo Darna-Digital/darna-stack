@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
     "dev:cf": "wrangler dev",
     "build": "tsc",
     "start": "node dist/index.js",
@@ -19,6 +19,7 @@
     "effect": "^3.21.2",
     "hono": "^4.12.16",
     "hono-openapi": "^1.1.2",
+    "jose": "^6.2.3",
     "zod": "^4.1.8"
   },
   "devDependencies": {

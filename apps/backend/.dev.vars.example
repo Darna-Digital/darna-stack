@@ -1,0 +1,13 @@
+# Copy to `.dev.vars` (gitignored). Wrangler reads this for `wrangler dev`.
+# For local Node dev (`pnpm dev`), copy the same values into `.env` (also gitignored)
+# or export them in your shell.
+#
+# Production: set via `wrangler secret put WORKOS_CLIENT_ID` (etc.) — never in wrangler.jsonc.
+
+# WorkOS — required by adminMiddleware to verify access tokens against
+# https://api.workos.com/sso/jwks/<WORKOS_CLIENT_ID>
+WORKOS_CLIENT_ID=
+
+# Optional — only needed if you call the WorkOS REST API from this backend
+# (e.g. listing users, creating organizations). Not required for token verification.
+# WORKOS_API_KEY=
