@@ -14,12 +14,20 @@
   "routes": [
     { "pattern": "darna-stack-admin.darnadigital.com", "custom_domain": true }
   ],
+  // Non-secret runtime config. Read in the server via `process.env.X`.
+  // Per-env values are overridden under `env.<name>.vars` below.
+  "vars": {
+    "BACKEND_URL": "https://darna-stack-backend.darnadigital.com"
+  },
   "env": {
     "staging": {
       "name": "darna-admin-staging",
       "routes": [
         { "pattern": "staging-darna-stack-admin.darnadigital.com", "custom_domain": true }
-      ]
+      ],
+      "vars": {
+        "BACKEND_URL": "https://staging-darna-stack-backend.darnadigital.com"
+      }
     }
   }
 }

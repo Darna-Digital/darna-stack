@@ -82,7 +82,8 @@ CI sets the WORKOS_* values onto the right Worker via `wrangler secret put` afte
 | Name | production | staging |
 |---|---|---|
 | `NEXT_PUBLIC_WORKOS_REDIRECT_URI` | `https://darna-stack-admin.darnadigital.com/callback` | `https://staging-darna-stack-admin.darnadigital.com/callback` |
-| `BACKEND_URL` | `https://darna-stack-backend.darnadigital.com` | `https://staging-darna-stack-backend.darnadigital.com` |
+
+`BACKEND_URL` is **not** a GitHub variable — it's set in [apps/admin/wrangler.jsonc](../apps/admin/wrangler.jsonc) under `vars` (per env) since Next.js doesn't inline server-only env vars. The Worker reads it at request time via `process.env.BACKEND_URL`.
 
 Optionally configure **deployment branch restrictions** on each environment so only `master` can deploy to `production` and only `staging` can deploy to `staging`. This prevents an accidental `workflow_dispatch` from the wrong branch.
 
