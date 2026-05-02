@@ -9,9 +9,12 @@
     "dev:admin": "pnpm --filter @darna/admin dev",
     "build": "pnpm -r run build",
     "lint": "pnpm -r run lint",
-    "typecheck": "pnpm -r run typecheck"
+    "typecheck": "pnpm -r run typecheck",
+    "deploy": "pnpm --filter @darna/backend run deploy && pnpm --filter @darna/admin run deploy",
+    "deploy:backend": "pnpm --filter @darna/backend run deploy",
+    "deploy:admin": "pnpm --filter @darna/admin run deploy"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   }
 }

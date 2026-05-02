@@ -12,6 +12,11 @@ out/
 .env.local
 .env.*.local
 
+# wrangler
+.wrangler/
+.dev.vars
+.open-next/
+
 # logs
 *.log
 npm-debug.log*

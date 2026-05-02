@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "darna-admin",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-04-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  }
+  // TODO: bind R2 for incremental cache (`NEXT_INC_CACHE_R2_BUCKET`) once content scales
+  // TODO: add `vars` for public env (e.g. NEXT_PUBLIC_BACKEND_URL); use `wrangler secret put` for private
+  // TODO: add `routes` / custom domain config
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "darna-backend",
+  "main": "src/worker.ts",
+  "compatibility_date": "2025-04-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  }
+  // TODO: bind D1 / KV / R2 / Hyperdrive / Queues here once needed
+  // TODO: add `routes` or `workers_dev` config when wiring a custom domain
+  // TODO: add `vars` for non-secret config; use `wrangler secret put` for secrets
+}
