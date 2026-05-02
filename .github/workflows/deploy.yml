@@ -61,12 +61,19 @@ jobs:
         run: pnpm typecheck
 
       - name: Verify Cloudflare auth
-        # `whoami` only proves the token can authenticate. The probe below proves
-        # it can talk to the Workers Scripts API on the target account — which
-        # is what every deploy needs. If it prints `success: false` with a 7003
-        # code, the token is missing the `Workers Scripts: Edit` permission.
         run: |
           pnpm --filter @darna/backend exec wrangler whoami
+
+          echo "--- Sanity-check the CLOUDFLARE_ACCOUNT_ID secret ---"
+          echo "secret length: ${#CLOUDFLARE_ACCOUNT_ID} (expected 32)"
+          echo -n "$CLOUDFLARE_ACCOUNT_ID" | wc -c | awk '{print "byte count (no newline):", $1}'
+          # Hex check: should be true. If false, secret has whitespace or wrong chars.
+          if [[ "$CLOUDFLARE_ACCOUNT_ID" =~ ^[0-9a-f]{32}$ ]]; then
+            echo "format: ✓ 32 hex chars"
+          else
+            echo "format: ✗ NOT 32 hex chars — the secret is malformed"
+          fi
+
           echo "--- Workers Scripts API probe ---"
           curl -sS \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
