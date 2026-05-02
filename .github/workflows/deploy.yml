@@ -83,10 +83,30 @@ jobs:
       - name: Deploy backend
         run: pnpm --filter @darna/backend exec wrangler deploy $WRANGLER_ARGS
 
+      - name: Sync backend Worker secrets
+        # Worker runtime secrets live in Cloudflare's per-Worker secret store,
+        # not in the deploy bundle. Sync them after each deploy so a fresh CI
+        # run can fix a missing or stale secret without manual `wrangler secret
+        # put` from a laptop. `printf '%s'` avoids trailing newlines.
+        env:
+          WORKOS_CLIENT_ID: ${{ secrets.WORKOS_CLIENT_ID }}
+        run: |
+          printf '%s' "$WORKOS_CLIENT_ID" | pnpm --filter @darna/backend exec wrangler secret put WORKOS_CLIENT_ID $WRANGLER_ARGS
+
       - name: Build & deploy admin
         run: |
           pnpm --filter @darna/admin exec opennextjs-cloudflare build
           pnpm --filter @darna/admin exec opennextjs-cloudflare deploy $WRANGLER_ARGS
+
+      - name: Sync admin Worker secrets
+        env:
+          WORKOS_API_KEY: ${{ secrets.WORKOS_API_KEY }}
+          WORKOS_CLIENT_ID: ${{ secrets.WORKOS_CLIENT_ID }}
+          WORKOS_COOKIE_PASSWORD: ${{ secrets.WORKOS_COOKIE_PASSWORD }}
+        run: |
+          printf '%s' "$WORKOS_API_KEY"          | pnpm --filter @darna/admin exec wrangler secret put WORKOS_API_KEY          $WRANGLER_ARGS
+          printf '%s' "$WORKOS_CLIENT_ID"        | pnpm --filter @darna/admin exec wrangler secret put WORKOS_CLIENT_ID        $WRANGLER_ARGS
+          printf '%s' "$WORKOS_COOKIE_PASSWORD"  | pnpm --filter @darna/admin exec wrangler secret put WORKOS_COOKIE_PASSWORD  $WRANGLER_ARGS
 
       - name: Build & deploy docs
         run: |

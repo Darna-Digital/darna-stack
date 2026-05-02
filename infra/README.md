@@ -55,27 +55,7 @@ The job uses GitHub's environment feature to load per-env secrets and vars — `
    pnpm --filter @darna/docs    exec opennextjs-cloudflare deploy --env staging
    ```
    On first deploy with `routes` configured, Wrangler claims each subdomain on the `darnadigital.com` zone and creates the DNS record. Cloudflare's Universal SSL (free) covers every single-level subdomain under `darnadigital.com`, so cert provisioning is essentially instant. Workers Custom Domains may still show a brief "Provisioning" state in the dashboard for a few seconds — that's the Worker hostname binding, not the cert.
-5. **Set Worker runtime secrets, separately per env**. Secrets are env-isolated when env blocks exist — top-level secrets are NOT inherited by `--env staging` Workers, and vice-versa. The backend needs `WORKOS_CLIENT_ID`; the admin needs `WORKOS_API_KEY`, `WORKOS_CLIENT_ID`, and `WORKOS_COOKIE_PASSWORD` (32+ chars, e.g. `openssl rand -base64 32`):
-   ```bash
-   # backend, production
-   cd apps/backend
-   wrangler secret put WORKOS_CLIENT_ID
-
-   # backend, staging
-   wrangler secret put WORKOS_CLIENT_ID --env staging
-
-   # admin, production
-   cd ../admin
-   wrangler secret put WORKOS_API_KEY
-   wrangler secret put WORKOS_CLIENT_ID
-   wrangler secret put WORKOS_COOKIE_PASSWORD
-
-   # admin, staging
-   wrangler secret put WORKOS_API_KEY --env staging
-   wrangler secret put WORKOS_CLIENT_ID --env staging
-   wrangler secret put WORKOS_COOKIE_PASSWORD --env staging
-   ```
-   Use a different `WORKOS_CLIENT_ID` per env if you want isolated user pools — production and staging would then point at separate WorkOS applications. Otherwise reuse.
+5. **Worker runtime secrets** are managed by the CI workflow — it pipes them into `wrangler secret put` after each deploy. You don't need to set them manually. Just put the values in GitHub Environment secrets in step 6 below. (They're still env-isolated on the Cloudflare side: production and staging Workers each have their own copy.)
 6. **Add the callback URLs in WorkOS** → dashboard → Redirects:
    - `https://darna-stack-admin.darnadigital.com/callback`
    - `https://staging-darna-stack-admin.darnadigital.com/callback`
@@ -87,10 +67,15 @@ In the repo: **Settings → Environments → New environment**, create two: `pro
 
 **Secrets:**
 
-| Name | Value |
-|---|---|
-| `CLOUDFLARE_API_TOKEN` | The token from step 2 above |
-| `CLOUDFLARE_ACCOUNT_ID` | Your account ID |
+| Name | Value | Used by |
+|---|---|---|
+| `CLOUDFLARE_API_TOKEN` | The token from step 3 | Wrangler — deploy auth |
+| `CLOUDFLARE_ACCOUNT_ID` | Account ID from step 2 | Wrangler — target account |
+| `WORKOS_API_KEY` | `sk_…` from WorkOS dashboard | Synced to admin Worker by CI |
+| `WORKOS_CLIENT_ID` | `client_…` from WorkOS dashboard | Synced to admin + backend Workers by CI |
+| `WORKOS_COOKIE_PASSWORD` | 32+ chars, `openssl rand -base64 32` | Synced to admin Worker by CI |
+
+CI sets the WORKOS_* values onto the right Worker via `wrangler secret put` after each deploy. Use the same values across environments unless you want isolated WorkOS user pools per environment, in which case set different `WORKOS_CLIENT_ID`s.
 
 **Variables** (not secret, just env-specific — baked into the Next.js bundle at build time):
 
