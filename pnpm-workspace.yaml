@@ -1,0 +1,7 @@
+packages:
+  - "apps/*"
+  - "infra/*"
+
+ignoredBuiltDependencies:
+  - sharp
+  - unrs-resolver

@@ -1,0 +1,17 @@
+{
+  "name": "darna-stack",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.15.1",
+  "scripts": {
+    "dev": "pnpm -r --parallel run dev",
+    "dev:backend": "pnpm --filter @darna/backend dev",
+    "dev:admin": "pnpm --filter @darna/admin dev",
+    "build": "pnpm -r run build",
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm -r run typecheck"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
