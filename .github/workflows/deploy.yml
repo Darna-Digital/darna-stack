@@ -60,6 +60,12 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Verify Cloudflare auth
+        # Prints the account the token can see. The "Account ID" column must
+        # match $CLOUDFLARE_ACCOUNT_ID — if not, the secret is wrong or the
+        # token wasn't scoped to this account.
+        run: pnpm --filter @darna/backend exec wrangler whoami
+
       - name: Deploy backend
         run: pnpm --filter @darna/backend exec wrangler deploy $WRANGLER_ARGS
 
