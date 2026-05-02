@@ -1,0 +1,74 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master, staging]
+  workflow_dispatch:
+
+# Don't let two deploys to the same branch race. Queue them instead.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+
+    # Selects which GitHub Environment's secrets/vars are loaded.
+    # `production` for master, `staging` for staging.
+    environment:
+      name: ${{ github.ref == 'refs/heads/master' && 'production' || 'staging' }}
+
+    env:
+      # Wrangler reads these automatically.
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # Baked into the admin's JS bundle at build time. Per-env value lives
+      # under the GitHub Environment as a (non-secret) variable.
+      NEXT_PUBLIC_WORKOS_REDIRECT_URI: ${{ vars.NEXT_PUBLIC_WORKOS_REDIRECT_URI }}
+
+      # Server-side env var the admin uses to call the backend at request time.
+      # Baked into the OpenNext worker bundle at build time.
+      BACKEND_URL: ${{ vars.BACKEND_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pick wrangler env
+        run: |
+          # Top-level wrangler config is production. Explicit `--env=""` silences
+          # the "no env specified" warning Wrangler 4 emits when env blocks exist.
+          if [[ "${GITHUB_REF}" == "refs/heads/master" ]]; then
+            echo 'WRANGLER_ARGS=--env=' >> $GITHUB_ENV
+          else
+            echo 'WRANGLER_ARGS=--env=staging' >> $GITHUB_ENV
+          fi
+
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Deploy backend
+        run: pnpm --filter @darna/backend exec wrangler deploy $WRANGLER_ARGS
+
+      - name: Build & deploy admin
+        run: |
+          pnpm --filter @darna/admin exec opennextjs-cloudflare build
+          pnpm --filter @darna/admin exec opennextjs-cloudflare deploy $WRANGLER_ARGS
+
+      - name: Build & deploy docs
+        run: |
+          pnpm --filter @darna/docs exec opennextjs-cloudflare build
+          pnpm --filter @darna/docs exec opennextjs-cloudflare deploy $WRANGLER_ARGS

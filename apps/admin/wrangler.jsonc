@@ -10,8 +10,16 @@
   },
   "observability": {
     "enabled": true
+  },
+  "routes": [
+    { "pattern": "darna-stack-admin.darnadigital.com", "custom_domain": true }
+  ],
+  "env": {
+    "staging": {
+      "name": "darna-admin-staging",
+      "routes": [
+        { "pattern": "staging-darna-stack-admin.darnadigital.com", "custom_domain": true }
+      ]
+    }
   }
-  // TODO: bind R2 for incremental cache (`NEXT_INC_CACHE_R2_BUCKET`) once content scales
-  // TODO: add `vars` for public env (e.g. NEXT_PUBLIC_BACKEND_URL); use `wrangler secret put` for private
-  // TODO: add `routes` / custom domain config
 }
