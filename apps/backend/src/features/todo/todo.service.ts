@@ -1,6 +1,7 @@
 import { Effect } from "effect"
 import { TodoRepository } from "./todo.repository.js"
-import { TodoNotFound, type CreateTodo, type Todo, type TodoId, type UpdateTodo } from "./todo.model.js"
+import { TodoNotFound } from "./todo.errors.js"
+import type { CreateTodo, Todo, TodoId, UpdateTodo } from "./todo.model.js"
 
 export class Todos extends Effect.Service<Todos>()("Todos", {
   accessors: true,

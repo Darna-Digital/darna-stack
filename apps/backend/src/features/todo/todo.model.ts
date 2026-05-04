@@ -1,4 +1,3 @@
-import { Data } from "effect"
 import { z } from "zod"
 
 export const TodoId = z.string().uuid().brand<"TodoId">()
@@ -22,11 +21,3 @@ export const UpdateTodo = z.object({
   done: z.boolean().optional(),
 })
 export type UpdateTodo = z.infer<typeof UpdateTodo>
-
-export class TodoNotFound extends Data.TaggedError("TodoNotFound")<{
-  readonly id: TodoId
-}> {
-  toResponse(): Response {
-    return Response.json({ error: "TodoNotFound", id: this.id }, { status: 404 })
-  }
-}
