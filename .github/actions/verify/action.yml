@@ -1,0 +1,23 @@
+name: Verify
+description: Install deps, typecheck the monorepo, and run the backend test suite. Caller must run actions/checkout before invoking this.
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+      with:
+        run_install: false
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: pnpm
+
+    - shell: bash
+      run: pnpm install --frozen-lockfile
+
+    - shell: bash
+      run: pnpm typecheck
+
+    - shell: bash
+      run: pnpm --filter @darna/backend test

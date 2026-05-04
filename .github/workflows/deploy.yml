@@ -15,24 +15,16 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
-  typecheck:
-    name: Typecheck
+  verify:
+    name: Verify
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          run_install: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
+      - uses: ./.github/actions/verify
 
   deploy-backend:
     name: Deploy backend
-    needs: typecheck
+    needs: verify
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.ref == 'refs/heads/master' && 'production' || 'staging' }}
@@ -56,7 +48,7 @@ jobs:
 
   deploy-admin:
     name: Deploy admin
-    needs: typecheck
+    needs: verify
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.ref == 'refs/heads/master' && 'production' || 'staging' }}
@@ -87,7 +79,7 @@ jobs:
 
   deploy-docs:
     name: Deploy docs
-    needs: typecheck
+    needs: verify
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.ref == 'refs/heads/master' && 'production' || 'staging' }}
@@ -106,7 +98,7 @@ jobs:
 
   deploy-web-client:
     name: Deploy web-client
-    needs: typecheck
+    needs: verify
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.ref == 'refs/heads/master' && 'production' || 'staging' }}
