@@ -9,6 +9,11 @@ concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: false
 
+env:
+  # Run JS-based actions on Node.js 24. Node.js 20 is deprecated on GitHub
+  # runners (forced default 2026-06-02, removed 2026-09-16).
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   typecheck:
     name: Typecheck
