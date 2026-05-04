@@ -1,0 +1,33 @@
+name: Setup deploy
+description: Install deps and emit WRANGLER_ARGS for the current ref. Caller must run actions/checkout before invoking this.
+
+outputs:
+  wrangler-args:
+    description: Wrangler env flag (--env= for production, --env=staging for staging).
+    value: ${{ steps.wrangler-args.outputs.value }}
+
+runs:
+  using: composite
+  steps:
+    - id: wrangler-args
+      shell: bash
+      run: |
+        # Top-level wrangler config is production. Explicit `--env=""` silences
+        # the "no env specified" warning Wrangler 4 emits when env blocks exist.
+        if [[ "${GITHUB_REF}" == "refs/heads/master" ]]; then
+          echo 'value=--env=' >> "$GITHUB_OUTPUT"
+        else
+          echo 'value=--env=staging' >> "$GITHUB_OUTPUT"
+        fi
+
+    - uses: pnpm/action-setup@v4
+      with:
+        run_install: false
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: pnpm
+
+    - shell: bash
+      run: pnpm install --frozen-lockfile

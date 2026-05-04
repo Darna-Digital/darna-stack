@@ -10,71 +10,91 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    name: Deploy ${{ github.ref_name }}
+  typecheck:
+    name: Typecheck
     runs-on: ubuntu-latest
-
-    environment:
-      name: ${{ github.ref == 'refs/heads/master' && 'production' || 'staging' }}
-
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      NEXT_PUBLIC_WORKOS_REDIRECT_URI: ${{ vars.NEXT_PUBLIC_WORKOS_REDIRECT_URI }}
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Pick wrangler env
-        run: |
-          # Top-level wrangler config is production. Explicit `--env=""` silences
-          # the "no env specified" warning Wrangler 4 emits when env blocks exist.
-          if [[ "${GITHUB_REF}" == "refs/heads/master" ]]; then
-            echo 'WRANGLER_ARGS=--env=' >> $GITHUB_ENV
-          else
-            echo 'WRANGLER_ARGS=--env=staging' >> $GITHUB_ENV
-          fi
-
       - uses: pnpm/action-setup@v4
         with:
           run_install: false
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-
       - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
 
-      - name: Typecheck
-        run: pnpm typecheck
-
+  deploy-backend:
+    name: Deploy backend
+    needs: typecheck
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref == 'refs/heads/master' && 'production' || 'staging' }}
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-deploy
+        id: setup
 
       - name: Deploy backend
-        run: pnpm --filter @darna/backend exec wrangler deploy $WRANGLER_ARGS
+        run: pnpm --filter @darna/backend exec wrangler deploy ${{ steps.setup.outputs.wrangler-args }}
 
       - name: Sync backend Worker secrets
         env:
           WORKOS_CLIENT_ID: ${{ secrets.WORKOS_CLIENT_ID }}
+          WRANGLER_ARGS: ${{ steps.setup.outputs.wrangler-args }}
         run: |
           printf '%s' "$WORKOS_CLIENT_ID" | pnpm --filter @darna/backend exec wrangler secret put WORKOS_CLIENT_ID $WRANGLER_ARGS
+
+  deploy-admin:
+    name: Deploy admin
+    needs: typecheck
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref == 'refs/heads/master' && 'production' || 'staging' }}
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      NEXT_PUBLIC_WORKOS_REDIRECT_URI: ${{ vars.NEXT_PUBLIC_WORKOS_REDIRECT_URI }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-deploy
+        id: setup
 
       - name: Build & deploy admin
         run: |
           pnpm --filter @darna/admin exec opennextjs-cloudflare build
-          pnpm --filter @darna/admin exec opennextjs-cloudflare deploy $WRANGLER_ARGS
+          pnpm --filter @darna/admin exec opennextjs-cloudflare deploy ${{ steps.setup.outputs.wrangler-args }}
 
       - name: Sync admin Worker secrets
         env:
           WORKOS_API_KEY: ${{ secrets.WORKOS_API_KEY }}
           WORKOS_CLIENT_ID: ${{ secrets.WORKOS_CLIENT_ID }}
           WORKOS_COOKIE_PASSWORD: ${{ secrets.WORKOS_COOKIE_PASSWORD }}
+          WRANGLER_ARGS: ${{ steps.setup.outputs.wrangler-args }}
         run: |
           printf '%s' "$WORKOS_API_KEY"          | pnpm --filter @darna/admin exec wrangler secret put WORKOS_API_KEY          $WRANGLER_ARGS
           printf '%s' "$WORKOS_CLIENT_ID"        | pnpm --filter @darna/admin exec wrangler secret put WORKOS_CLIENT_ID        $WRANGLER_ARGS
           printf '%s' "$WORKOS_COOKIE_PASSWORD"  | pnpm --filter @darna/admin exec wrangler secret put WORKOS_COOKIE_PASSWORD  $WRANGLER_ARGS
 
+  deploy-docs:
+    name: Deploy docs
+    needs: typecheck
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref == 'refs/heads/master' && 'production' || 'staging' }}
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-deploy
+        id: setup
+
       - name: Build & deploy docs
         run: |
           pnpm --filter @darna/docs exec opennextjs-cloudflare build
-          pnpm --filter @darna/docs exec opennextjs-cloudflare deploy $WRANGLER_ARGS
+          pnpm --filter @darna/docs exec opennextjs-cloudflare deploy ${{ steps.setup.outputs.wrangler-args }}
