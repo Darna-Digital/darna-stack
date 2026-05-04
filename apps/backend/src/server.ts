@@ -6,15 +6,19 @@ import { Layer } from "effect"
 import { Api } from "./api.js"
 import { TodoHandlers } from "./features/todo/todo.handlers.js"
 import { AdminHandlers } from "./features/admin/admin.handlers.js"
-import { TodosLive } from "./features/todo/todo.layer.js"
+import { ServicesLayer } from "./lib/effect/runtime.js"
 
 const ApiLive = HttpApiBuilder.api(Api).pipe(
   Layer.provide([TodoHandlers, AdminHandlers]),
-  Layer.provide(TodosLive),
+  Layer.provide(ServicesLayer),
 )
 
 const { handler: apiHandler } = HttpApiBuilder.toWebHandler(
-  Layer.mergeAll(ApiLive, HttpApiBuilder.Router.Live, HttpServer.layerContext),
+  Layer.mergeAll(
+    ApiLive,
+    HttpApiBuilder.Router.Live,
+    HttpServer.layerContext,
+  ),
 )
 
 const spec = OpenApi.fromApi(Api)
