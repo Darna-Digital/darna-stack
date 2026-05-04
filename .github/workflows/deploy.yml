@@ -5,7 +5,6 @@ on:
     branches: [master, staging]
   workflow_dispatch:
 
-# Don't let two deploys to the same branch race. Queue them instead.
 concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: false
@@ -15,24 +14,13 @@ jobs:
     name: Deploy ${{ github.ref_name }}
     runs-on: ubuntu-latest
 
-    # Selects which GitHub Environment's secrets/vars are loaded.
-    # `production` for master, `staging` for staging.
     environment:
       name: ${{ github.ref == 'refs/heads/master' && 'production' || 'staging' }}
 
     env:
-      # Wrangler reads these automatically.
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-
-      # Baked into the admin's JS bundle at build time (NEXT_PUBLIC_* are the
-      # only env vars Next.js inlines into client code). Per-env value lives
-      # under the GitHub Environment as a (non-secret) variable.
       NEXT_PUBLIC_WORKOS_REDIRECT_URI: ${{ vars.NEXT_PUBLIC_WORKOS_REDIRECT_URI }}
-
-      # Server-only env vars (e.g. BACKEND_URL) are NOT inlined by Next at
-      # build time. They live in `wrangler.jsonc` under `vars` (per env) and
-      # are read at request time via `process.env.X` on the Worker.
 
     steps:
       - uses: actions/checkout@v4
@@ -61,34 +49,11 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Verify Cloudflare auth
-        run: |
-          pnpm --filter @darna/backend exec wrangler whoami
-
-          echo "--- Sanity-check the CLOUDFLARE_ACCOUNT_ID secret ---"
-          echo "secret length: ${#CLOUDFLARE_ACCOUNT_ID} (expected 32)"
-          echo -n "$CLOUDFLARE_ACCOUNT_ID" | wc -c | awk '{print "byte count (no newline):", $1}'
-          # Hex check: should be true. If false, secret has whitespace or wrong chars.
-          if [[ "$CLOUDFLARE_ACCOUNT_ID" =~ ^[0-9a-f]{32}$ ]]; then
-            echo "format: ✓ 32 hex chars"
-          else
-            echo "format: ✗ NOT 32 hex chars — the secret is malformed"
-          fi
-
-          echo "--- Workers Scripts API probe ---"
-          curl -sS \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts" \
-            | python3 -c "import sys, json; d=json.load(sys.stdin); print('success:', d.get('success')); print('errors:', d.get('errors')); print('result count:', len(d.get('result') or []))"
 
       - name: Deploy backend
         run: pnpm --filter @darna/backend exec wrangler deploy $WRANGLER_ARGS
 
       - name: Sync backend Worker secrets
-        # Worker runtime secrets live in Cloudflare's per-Worker secret store,
-        # not in the deploy bundle. Sync them after each deploy so a fresh CI
-        # run can fix a missing or stale secret without manual `wrangler secret
-        # put` from a laptop. `printf '%s'` avoids trailing newlines.
         env:
           WORKOS_CLIENT_ID: ${{ secrets.WORKOS_CLIENT_ID }}
         run: |
