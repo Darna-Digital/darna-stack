@@ -15,15 +15,15 @@
   },
   "dependencies": {
     "@types/mdx": "^2.0.13",
-    "fumadocs-core": "^16.8.5",
+    "fumadocs-core": "^16.8.7",
     "fumadocs-mdx": "^14.3.2",
-    "fumadocs-ui": "^16.8.5",
+    "fumadocs-ui": "^16.8.7",
     "next": "16.2.4",
     "react": "19.2.5",
     "react-dom": "19.2.5"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.19.5",
+    "@opennextjs/cloudflare": "^1.19.6",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^25.6.0",
     "@types/react": "^19",

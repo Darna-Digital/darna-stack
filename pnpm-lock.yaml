@@ -24,8 +24,8 @@ importers:
         version: 19.2.5(react@19.2.5)
     devDependencies:
       '@opennextjs/cloudflare':
-        specifier: ^1.19.5
-        version: 1.19.5(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(wrangler@4.87.0(@cloudflare/workers-types@4.20260502.1))
+        specifier: ^1.19.6
+        version: 1.19.6(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(wrangler@4.87.0(@cloudflare/workers-types@4.20260504.1))
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.2.4
@@ -52,7 +52,7 @@ importers:
         version: 6.0.3
       wrangler:
         specifier: 4.87.0
-        version: 4.87.0(@cloudflare/workers-types@4.20260502.1)
+        version: 4.87.0(@cloudflare/workers-types@4.20260504.1)
 
   apps/backend:
     dependencies:
@@ -73,17 +73,17 @@ importers:
         version: 4.12.16
       hono-openapi:
         specifier: ^1.1.2
-        version: 1.3.0(@hono/standard-validator@0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.16))(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.2)(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.2))(@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.2)(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.2))(@standard-schema/spec@1.1.0)(effect@3.21.2)(openapi-types@12.1.3)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.2))(@types/json-schema@7.0.15)(hono@4.12.16)(openapi-types@12.1.3)
+        version: 1.3.0(@hono/standard-validator@0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.16))(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.2)(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.3))(@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.2)(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.3))(@standard-schema/spec@1.1.0)(effect@3.21.2)(openapi-types@12.1.3)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.3))(@types/json-schema@7.0.15)(hono@4.12.16)(openapi-types@12.1.3)
       jose:
         specifier: ^6.2.3
         version: 6.2.3
       zod:
-        specifier: ^4.1.8
-        version: 4.4.2
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: ^4.20260502.1
-        version: 4.20260502.1
+        specifier: ^4.20260504.1
+        version: 4.20260504.1
       '@types/node':
         specifier: ^25.6.0
         version: 25.6.0
@@ -95,7 +95,7 @@ importers:
         version: 6.0.3
       wrangler:
         specifier: 4.87.0
-        version: 4.87.0(@cloudflare/workers-types@4.20260502.1)
+        version: 4.87.0(@cloudflare/workers-types@4.20260504.1)
 
   apps/docs:
     dependencies:
@@ -103,14 +103,14 @@ importers:
         specifier: ^2.0.13
         version: 2.0.13
       fumadocs-core:
-        specifier: ^16.8.5
-        version: 16.8.5(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.14.0(react@19.2.5))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(zod@4.4.2)
+        specifier: ^16.8.7
+        version: 16.8.7(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.14.0(react@19.2.5))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(zod@4.4.3)
       fumadocs-mdx:
         specifier: ^14.3.2
-        version: 14.3.2(@types/mdast@4.0.4)(@types/mdx@2.0.13)(@types/react@19.2.14)(fumadocs-core@16.8.5(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.14.0(react@19.2.5))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(zod@4.4.2))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react@19.2.5)
+        version: 14.3.2(@types/mdast@4.0.4)(@types/mdx@2.0.13)(@types/react@19.2.14)(fumadocs-core@16.8.7(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.14.0(react@19.2.5))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(zod@4.4.3))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react@19.2.5)
       fumadocs-ui:
-        specifier: ^16.8.5
-        version: 16.8.5(@tailwindcss/oxide@4.2.4)(@types/mdx@2.0.13)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(fumadocs-core@16.8.5(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.14.0(react@19.2.5))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(zod@4.4.2))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(tailwindcss@4.2.4)
+        specifier: ^16.8.7
+        version: 16.8.7(@tailwindcss/oxide@4.2.4)(@types/mdx@2.0.13)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(fumadocs-core@16.8.7(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.14.0(react@19.2.5))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(zod@4.4.3))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(tailwindcss@4.2.4)
       next:
         specifier: 16.2.4
         version: 16.2.4(@babel/core@7.29.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -122,8 +122,8 @@ importers:
         version: 19.2.5(react@19.2.5)
     devDependencies:
       '@opennextjs/cloudflare':
-        specifier: ^1.19.5
-        version: 1.19.5(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(wrangler@4.87.0(@cloudflare/workers-types@4.20260502.1))
+        specifier: ^1.19.6
+        version: 1.19.6(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(wrangler@4.87.0(@cloudflare/workers-types@4.20260504.1))
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.2.4
@@ -150,7 +150,7 @@ importers:
         version: 6.0.3
       wrangler:
         specifier: ^4.87.0
-        version: 4.87.0(@cloudflare/workers-types@4.20260502.1)
+        version: 4.87.0(@cloudflare/workers-types@4.20260504.1)
 
 packages:
 
@@ -525,8 +525,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@cloudflare/workers-types@4.20260502.1':
-    resolution: {integrity: sha512-gttFwGL0pYBF5nA2GIazKTVjDqXLnqWa/Mstd5aGTZyzkhmPy0ej3L2sIn2h8kAbF6I+XGK0P4UXvlmnuxefYg==}
+  '@cloudflare/workers-types@4.20260504.1':
+    resolution: {integrity: sha512-x/7BzBXSGBQS0wHdaY0/1bcaRszkkhCjTc5maQvNSHu/pTVdBF2f/L41W8pRSJJSbLL80ynW7O923O7v3PaLtg==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -1529,8 +1529,8 @@ packages:
     peerDependencies:
       next: '>=15.5.15 <16 || >=16.2.3'
 
-  '@opennextjs/cloudflare@1.19.5':
-    resolution: {integrity: sha512-EE3RiAyxqqlKBImUFuSdK+jYgSuWvQBn0iLnh1USF0nPAGbYjmjRLmOpxNPd234yE+JerDK3GkJ787xF86lHCw==}
+  '@opennextjs/cloudflare@1.19.6':
+    resolution: {integrity: sha512-2Qd0IbcqPdsjsiaFrmACxuJHR8Pxm1JrUJIn/tFoTu+HsfFR7W921NZI50KQ5bulqg1e//Lb5TonwQlEgmSBGw==}
     hasBin: true
     peerDependencies:
       next: '>=15.5.15 <16 || >=16.2.3'
@@ -3233,8 +3233,8 @@ packages:
   fast-levenshtein@2.0.6:
     resolution: {integrity: sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==}
 
-  fast-xml-builder@1.1.5:
-    resolution: {integrity: sha512-4TJn/8FKLeslLAH3dnohXqE3QSoxkhvaMzepOIZytwJXZO69Bfz0HBdDHzOTOon6G59Zrk6VQ2bEiv1t61rfkA==}
+  fast-xml-builder@1.1.7:
+    resolution: {integrity: sha512-Yh7/7rQuMXICNr0oMYDR2yHP6oUvmQsTToFeOWj/kIDhAwQ+c4Ol/lbcwOmEM5OHYQmh6S6EQSQ1sljCKP36bQ==}
 
   fast-xml-parser@5.7.2:
     resolution: {integrity: sha512-P7oW7tLbYnhOLQk/Gv7cZgzgMPP/XN03K02/Jy6Y/NHzyIAIpxuZIM/YqAkfiXFPxA2CTm7NtCijK9EDu09u2w==}
@@ -3324,8 +3324,8 @@ packages:
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
 
-  fumadocs-core@16.8.5:
-    resolution: {integrity: sha512-4MRqh/KWtR5Q5+LJd2SFv3nLDHtuZw3q8rwApd9nAWkunHVU30U17fUVq6nY+IDoLs7bSLnvDGvoE+Ynelrn3A==}
+  fumadocs-core@16.8.7:
+    resolution: {integrity: sha512-y7awKyp4PwA2fGCsa/9z7a6/SlhAIABV9B/kmUAy9NlM+eo1Lm3P0A+Bcs7R36YsVsJd9tqiVuExbpLQ7n01Jw==}
     peerDependencies:
       '@mdx-js/mdx': '*'
       '@mixedbread/sdk': 0.x.x
@@ -3411,13 +3411,13 @@ packages:
       vite:
         optional: true
 
-  fumadocs-ui@16.8.5:
-    resolution: {integrity: sha512-caJjSfUhNkwoqumOBKfHxE1UjVHxkTsoaUhA96IvCM3G82bU2OKhf1pYtf/GbZ0XVdIlmY8Z47Cqwsze0HlXjg==}
+  fumadocs-ui@16.8.7:
+    resolution: {integrity: sha512-ICTA2y+R++f8UKF3RL6mT3jCk6l7F5wpfuPV5dc7VRWNGxeFeiEwHdqo6Zb51HTjt1jDc7PQ1/T8I+gwPniU8g==}
     peerDependencies:
       '@takumi-rs/image-response': '*'
       '@types/mdx': '*'
       '@types/react': '*'
-      fumadocs-core: 16.8.5
+      fumadocs-core: 16.8.7
       next: 16.x.x
       react: ^19.2.0
       react-dom: ^19.2.0
@@ -3935,8 +3935,8 @@ packages:
   lru-cache@10.4.3:
     resolution: {integrity: sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==}
 
-  lru-cache@11.3.5:
-    resolution: {integrity: sha512-NxVFwLAnrd9i7KUBxC4DrUhmgjzOs+1Qm50D3oF1/oL+r1NpZ4gA7xvG0/zJ8evR7zIKn4vLf7qTNduWFtCrRw==}
+  lru-cache@11.3.6:
+    resolution: {integrity: sha512-Gf/KoL3C/MlI7Bt0PGI9I+TeTC/I6r/csU58N4BSNc4lppLBeKsOdFYkK+dX0ABDUMJNfCHTyPpzwwO21Awd3A==}
     engines: {node: 20 || >=22}
 
   lru-cache@5.1.1:
@@ -5105,8 +5105,8 @@ packages:
     peerDependencies:
       zod: ^3.25.0 || ^4.0.0
 
-  zod@4.4.2:
-    resolution: {integrity: sha512-IynmDyxsEsb9RKzO3J9+4SxXnl2FTFSzNBaKKaMV6tsSk0rw9gYw9gs+JFCq/qk2LCZ78KDwyj+Z289TijSkUw==}
+  zod@4.4.3:
+    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -5960,7 +5960,7 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20260430.1':
     optional: true
 
-  '@cloudflare/workers-types@4.20260502.1': {}
+  '@cloudflare/workers-types@4.20260504.1': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -6641,7 +6641,7 @@ snapshots:
       - aws-crt
       - supports-color
 
-  '@opennextjs/cloudflare@1.19.5(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(wrangler@4.87.0(@cloudflare/workers-types@4.20260502.1))':
+  '@opennextjs/cloudflare@1.19.6(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(wrangler@4.87.0(@cloudflare/workers-types@4.20260504.1))':
     dependencies:
       '@ast-grep/napi': 0.40.5
       '@dotenvx/dotenvx': 1.31.0
@@ -6653,7 +6653,7 @@ snapshots:
       glob: 12.0.0
       next: 16.2.4(@babel/core@7.29.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       ts-tqdm: 0.8.6
-      wrangler: 4.87.0(@cloudflare/workers-types@4.20260502.1)
+      wrangler: 4.87.0(@cloudflare/workers-types@4.20260504.1)
       yargs: 18.0.0
     transitivePeerDependencies:
       - aws-crt
@@ -7048,7 +7048,7 @@ snapshots:
       '@scalar/helpers': 0.5.5
       nanoid: 5.1.11
       type-fest: 5.6.0
-      zod: 4.4.2
+      zod: 4.4.3
 
   '@shikijs/core@4.0.2':
     dependencies:
@@ -7429,7 +7429,7 @@ snapshots:
 
   '@speed-highlight/core@1.2.15': {}
 
-  '@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.2)(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.2)':
+  '@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.2)(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.3)':
     dependencies:
       '@standard-schema/spec': 1.1.0
       '@types/json-schema': 7.0.15
@@ -7437,17 +7437,17 @@ snapshots:
     optionalDependencies:
       effect: 3.21.2
       valibot: 1.3.1(typescript@6.0.3)
-      zod: 4.4.2
+      zod: 4.4.3
 
-  '@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.2)(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.2))(@standard-schema/spec@1.1.0)(effect@3.21.2)(openapi-types@12.1.3)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.2)':
+  '@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.2)(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.3))(@standard-schema/spec@1.1.0)(effect@3.21.2)(openapi-types@12.1.3)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.3)':
     dependencies:
-      '@standard-community/standard-json': 0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.2)(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.2)
+      '@standard-community/standard-json': 0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.2)(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.3)
       '@standard-schema/spec': 1.1.0
       openapi-types: 12.1.3
     optionalDependencies:
       effect: 3.21.2
       valibot: 1.3.1(typescript@6.0.3)
-      zod: 4.4.2
+      zod: 4.4.3
 
   '@standard-schema/spec@1.1.0': {}
 
@@ -8545,8 +8545,8 @@ snapshots:
       '@babel/parser': 7.29.3
       eslint: 10.3.0(jiti@2.6.1)
       hermes-parser: 0.25.1
-      zod: 4.4.2
-      zod-validation-error: 4.0.2(zod@4.4.2)
+      zod: 4.4.3
+      zod-validation-error: 4.0.2(zod@4.4.3)
     transitivePeerDependencies:
       - supports-color
 
@@ -8748,14 +8748,14 @@ snapshots:
 
   fast-levenshtein@2.0.6: {}
 
-  fast-xml-builder@1.1.5:
+  fast-xml-builder@1.1.7:
     dependencies:
       path-expression-matcher: 1.5.0
 
   fast-xml-parser@5.7.2:
     dependencies:
       '@nodable/entities': 2.1.0
-      fast-xml-builder: 1.1.5
+      fast-xml-builder: 1.1.7
       path-expression-matcher: 1.5.0
       strnum: 2.2.3
 
@@ -8840,7 +8840,7 @@ snapshots:
   fsevents@2.3.3:
     optional: true
 
-  fumadocs-core@16.8.5(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.14.0(react@19.2.5))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(zod@4.4.2):
+  fumadocs-core@16.8.7(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.14.0(react@19.2.5))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(zod@4.4.3):
     dependencies:
       '@orama/orama': 3.1.18
       estree-util-value-to-estree: 3.5.0
@@ -8869,18 +8869,18 @@ snapshots:
       next: 16.2.4(@babel/core@7.29.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       react: 19.2.5
       react-dom: 19.2.5(react@19.2.5)
-      zod: 4.4.2
+      zod: 4.4.3
     transitivePeerDependencies:
       - supports-color
 
-  fumadocs-mdx@14.3.2(@types/mdast@4.0.4)(@types/mdx@2.0.13)(@types/react@19.2.14)(fumadocs-core@16.8.5(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.14.0(react@19.2.5))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(zod@4.4.2))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react@19.2.5):
+  fumadocs-mdx@14.3.2(@types/mdast@4.0.4)(@types/mdx@2.0.13)(@types/react@19.2.14)(fumadocs-core@16.8.7(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.14.0(react@19.2.5))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(zod@4.4.3))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react@19.2.5):
     dependencies:
       '@mdx-js/mdx': 3.1.1
       '@standard-schema/spec': 1.1.0
       chokidar: 5.0.0
       esbuild: 0.28.0
       estree-util-value-to-estree: 3.5.0
-      fumadocs-core: 16.8.5(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.14.0(react@19.2.5))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(zod@4.4.2)
+      fumadocs-core: 16.8.7(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.14.0(react@19.2.5))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(zod@4.4.3)
       js-yaml: 4.1.1
       mdast-util-mdx: 3.0.0
       mdast-util-to-markdown: 2.1.2
@@ -8892,7 +8892,7 @@ snapshots:
       unist-util-remove-position: 5.0.0
       unist-util-visit: 5.1.0
       vfile: 6.0.3
-      zod: 4.4.2
+      zod: 4.4.3
     optionalDependencies:
       '@types/mdast': 4.0.4
       '@types/mdx': 2.0.13
@@ -8902,7 +8902,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  fumadocs-ui@16.8.5(@tailwindcss/oxide@4.2.4)(@types/mdx@2.0.13)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(fumadocs-core@16.8.5(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.14.0(react@19.2.5))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(zod@4.4.2))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(tailwindcss@4.2.4):
+  fumadocs-ui@16.8.7(@tailwindcss/oxide@4.2.4)(@types/mdx@2.0.13)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(fumadocs-core@16.8.7(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.14.0(react@19.2.5))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(zod@4.4.3))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(tailwindcss@4.2.4):
     dependencies:
       '@fumadocs/tailwind': 0.0.5(@tailwindcss/oxide@4.2.4)(tailwindcss@4.2.4)
       '@radix-ui/react-accordion': 1.2.12(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -8916,7 +8916,7 @@ snapshots:
       '@radix-ui/react-slot': 1.2.4(@types/react@19.2.14)(react@19.2.5)
       '@radix-ui/react-tabs': 1.1.13(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       class-variance-authority: 0.7.1
-      fumadocs-core: 16.8.5(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.14.0(react@19.2.5))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(zod@4.4.2)
+      fumadocs-core: 16.8.7(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.14.0(react@19.2.5))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(zod@4.4.3)
       lucide-react: 1.14.0(react@19.2.5)
       motion: 12.38.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       next-themes: 0.4.6(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -9166,10 +9166,10 @@ snapshots:
     dependencies:
       hermes-estree: 0.25.1
 
-  hono-openapi@1.3.0(@hono/standard-validator@0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.16))(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.2)(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.2))(@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.2)(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.2))(@standard-schema/spec@1.1.0)(effect@3.21.2)(openapi-types@12.1.3)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.2))(@types/json-schema@7.0.15)(hono@4.12.16)(openapi-types@12.1.3):
+  hono-openapi@1.3.0(@hono/standard-validator@0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.16))(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.2)(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.3))(@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.2)(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.3))(@standard-schema/spec@1.1.0)(effect@3.21.2)(openapi-types@12.1.3)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.3))(@types/json-schema@7.0.15)(hono@4.12.16)(openapi-types@12.1.3):
     dependencies:
-      '@standard-community/standard-json': 0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.2)(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.2)
-      '@standard-community/standard-openapi': 0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.2)(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.2))(@standard-schema/spec@1.1.0)(effect@3.21.2)(openapi-types@12.1.3)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.2)
+      '@standard-community/standard-json': 0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.2)(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.3)
+      '@standard-community/standard-openapi': 0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.2)(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.3))(@standard-schema/spec@1.1.0)(effect@3.21.2)(openapi-types@12.1.3)(valibot@1.3.1(typescript@6.0.3))(zod@4.4.3)
       '@types/json-schema': 7.0.15
       openapi-types: 12.1.3
     optionalDependencies:
@@ -9483,7 +9483,7 @@ snapshots:
 
   lru-cache@10.4.3: {}
 
-  lru-cache@11.3.5: {}
+  lru-cache@11.3.6: {}
 
   lru-cache@5.1.1:
     dependencies:
@@ -10191,7 +10191,7 @@ snapshots:
 
   path-scurry@2.0.2:
     dependencies:
-      lru-cache: 11.3.5
+      lru-cache: 11.3.6
       minipass: 7.1.3
 
   path-to-regexp@6.3.0: {}
@@ -11041,7 +11041,7 @@ snapshots:
       '@cloudflare/workerd-linux-arm64': 1.20260430.1
       '@cloudflare/workerd-windows-64': 1.20260430.1
 
-  wrangler@4.87.0(@cloudflare/workers-types@4.20260502.1):
+  wrangler@4.87.0(@cloudflare/workers-types@4.20260504.1):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.5.0
       '@cloudflare/unenv-preset': 2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260430.1)
@@ -11052,7 +11052,7 @@ snapshots:
       unenv: 2.0.0-rc.24
       workerd: 1.20260430.1
     optionalDependencies:
-      '@cloudflare/workers-types': 4.20260502.1
+      '@cloudflare/workers-types': 4.20260504.1
       fsevents: 2.3.3
     transitivePeerDependencies:
       - bufferutil
@@ -11100,10 +11100,10 @@ snapshots:
       cookie: 1.1.1
       youch-core: 0.3.3
 
-  zod-validation-error@4.0.2(zod@4.4.2):
+  zod-validation-error@4.0.2(zod@4.4.3):
     dependencies:
-      zod: 4.4.2
+      zod: 4.4.3
 
-  zod@4.4.2: {}
+  zod@4.4.3: {}
 
   zwitch@2.0.4: {}

@@ -20,10 +20,10 @@
     "hono": "^4.12.16",
     "hono-openapi": "^1.1.2",
     "jose": "^6.2.3",
-    "zod": "^4.1.8"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260502.1",
+    "@cloudflare/workers-types": "^4.20260504.1",
     "@types/node": "^25.6.0",
     "tsx": "^4.7.1",
     "typescript": "^6.0.3",
