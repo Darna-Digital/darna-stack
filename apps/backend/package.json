@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./router": {
-      "types": "./src/router.ts",
-      "default": "./src/router.ts"
+    "./api": {
+      "types": "./src/api.ts",
+      "default": "./src/api.ts"
     },
     "./schemas/todo": {
       "types": "./src/features/todo/todo.model.ts",
@@ -25,15 +25,13 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
+    "@effect/platform": "^0.96.1",
+    "@effect/platform-node": "^0.106.0",
     "@hono/node-server": "^2.0.1",
-    "@orpc/openapi": "^1.14.1",
-    "@orpc/server": "^1.14.1",
-    "@orpc/zod": "^1.14.1",
     "@scalar/hono-api-reference": "^0.10.13",
     "effect": "^3.21.2",
     "hono": "^4.12.16",
-    "jose": "^6.2.3",
-    "zod": "^4.4.3"
+    "jose": "^6.2.3"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260504.1",

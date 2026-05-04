@@ -1,50 +1,29 @@
+import { HttpApiBuilder, HttpServer, OpenApi } from "@effect/platform"
 import { Hono } from "hono"
 import { cors } from "hono/cors"
-import { RPCHandler } from "@orpc/server/fetch"
-import { OpenAPIHandler } from "@orpc/openapi/fetch"
-import { OpenAPIGenerator } from "@orpc/openapi"
-import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4"
 import { Scalar } from "@scalar/hono-api-reference"
-import { router } from "./router.js"
+import { Layer } from "effect"
+import { Api } from "./api.js"
+import { TodoHandlers } from "./features/todo/todo.handlers.js"
+import { AdminHandlers } from "./features/admin/admin.handlers.js"
+import { TodosLive } from "./features/todo/todo.layer.js"
 
-const rpc = new RPCHandler(router)
-const openapi = new OpenAPIHandler(router)
+const ApiLive = HttpApiBuilder.api(Api).pipe(
+  Layer.provide([TodoHandlers, AdminHandlers]),
+  Layer.provide(TodosLive),
+)
 
-const generator = new OpenAPIGenerator({
-  schemaConverters: [new ZodToJsonSchemaConverter()],
-})
+const { handler: apiHandler } = HttpApiBuilder.toWebHandler(
+  Layer.mergeAll(ApiLive, HttpApiBuilder.Router.Live, HttpServer.layerContext),
+)
 
-let cachedSpec: Promise<unknown> | null = null
-const getSpec = () => {
-  if (!cachedSpec) {
-    cachedSpec = generator.generate(router, {
-      info: { title: "Darna Backend", version: "0.0.0" },
-      servers: [{ url: "/api" }],
-    })
-  }
-  return cachedSpec
-}
+const spec = OpenApi.fromApi(Api)
 
 export const app = new Hono()
   .use("*", cors({ origin: (o) => o ?? "*", credentials: true }))
   .get("/health", (c) => c.json({ ok: true }))
-  .get("/openapi", async (c) => c.json((await getSpec()) as object))
+  .get("/openapi", (c) => c.json(spec as object))
   .get("/docs", Scalar({ url: "/openapi", pageTitle: "Darna Backend — API" }))
-  .all("/api/*", async (c) => {
-    const { matched, response } = await openapi.handle(c.req.raw, {
-      prefix: "/api",
-      context: { request: c.req.raw },
-    })
-    if (matched) return response
-    return c.notFound()
-  })
-  .all("/rpc/*", async (c) => {
-    const { matched, response } = await rpc.handle(c.req.raw, {
-      prefix: "/rpc",
-      context: { request: c.req.raw },
-    })
-    if (matched) return response
-    return c.notFound()
-  })
+  .all("/*", (c) => apiHandler(c.req.raw))
 
 export type AppType = typeof app

@@ -2,30 +2,31 @@
 
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query"
-import { CreateTodo, type CreateTodo as CreateTodoInput } from "@darna/backend/schemas/todo"
-import { orpcQuery } from "@/lib/orpc"
+import { useQueryClient } from "@tanstack/react-query"
+import { z } from "zod"
+import { $api } from "@/lib/api"
+
+const CreateTodo = z.object({
+  title: z.string().trim().min(1, "Required").max(200),
+})
+type CreateTodoInput = z.infer<typeof CreateTodo>
 
 export function TodoList() {
   const qc = useQueryClient()
-  const todoKey = orpcQuery.todo.key()
-  const invalidate = () => qc.invalidateQueries({ queryKey: todoKey })
+  const invalidateList = () =>
+    qc.invalidateQueries({ queryKey: ["get", "/todos"] })
 
-  const { data: todos } = useSuspenseQuery(orpcQuery.todo.list.queryOptions())
+  const { data: todos } = $api.useSuspenseQuery("get", "/todos")
 
-  const create = useMutation(
-    orpcQuery.todo.create.mutationOptions({ onSuccess: invalidate }),
-  )
-  const update = useMutation(
-    orpcQuery.todo.update.mutationOptions({ onSuccess: invalidate }),
-  )
-  const remove = useMutation(
-    orpcQuery.todo.remove.mutationOptions({ onSuccess: invalidate }),
-  )
+  const create = $api.useMutation("post", "/todos", {
+    onSuccess: invalidateList,
+  })
+  const update = $api.useMutation("patch", "/todos/{id}", {
+    onSuccess: invalidateList,
+  })
+  const remove = $api.useMutation("delete", "/todos/{id}", {
+    onSuccess: invalidateList,
+  })
 
   const form = useForm<CreateTodoInput>({
     resolver: zodResolver(CreateTodo),
@@ -33,7 +34,7 @@ export function TodoList() {
   })
 
   const onSubmit = form.handleSubmit(async (input) => {
-    await create.mutateAsync(input)
+    await create.mutateAsync({ body: input })
     form.reset()
   })
 
@@ -73,7 +74,10 @@ export function TodoList() {
                 type="checkbox"
                 checked={t.done}
                 onChange={() =>
-                  update.mutate({ id: t.id, patch: { done: !t.done } })
+                  update.mutate({
+                    params: { path: { id: t.id } },
+                    body: { done: !t.done },
+                  })
                 }
                 className="size-4"
               />
@@ -86,7 +90,9 @@ export function TodoList() {
               </span>
               <button
                 type="button"
-                onClick={() => remove.mutate({ id: t.id })}
+                onClick={() =>
+                  remove.mutate({ params: { path: { id: t.id } } })
+                }
                 className="text-xs text-zinc-500 hover:text-red-600"
               >
                 delete

@@ -1,23 +1,25 @@
-import { z } from "zod"
+import { Schema } from "effect"
 
-export const TodoId = z.string().uuid().brand<"TodoId">()
-export type TodoId = z.infer<typeof TodoId>
+export const TodoId = Schema.UUID.pipe(Schema.brand("TodoId"))
+export type TodoId = typeof TodoId.Type
 
-export const Todo = z.object({
+export const Todo = Schema.Struct({
   id: TodoId,
-  title: z.string().min(1).max(200),
-  done: z.boolean(),
-  createdAt: z.string().datetime(),
+  title: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(200)),
+  done: Schema.Boolean,
+  createdAt: Schema.String,
 })
-export type Todo = z.infer<typeof Todo>
+export type Todo = typeof Todo.Type
 
-export const CreateTodo = z.object({
-  title: z.string().min(1).max(200),
+export const CreateTodo = Schema.Struct({
+  title: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(200)),
 })
-export type CreateTodo = z.infer<typeof CreateTodo>
+export type CreateTodo = typeof CreateTodo.Type
 
-export const UpdateTodo = z.object({
-  title: z.string().min(1).max(200).optional(),
-  done: z.boolean().optional(),
+export const UpdateTodo = Schema.Struct({
+  title: Schema.optional(
+    Schema.String.pipe(Schema.minLength(1), Schema.maxLength(200)),
+  ),
+  done: Schema.optional(Schema.Boolean),
 })
-export type UpdateTodo = z.infer<typeof UpdateTodo>
+export type UpdateTodo = typeof UpdateTodo.Type

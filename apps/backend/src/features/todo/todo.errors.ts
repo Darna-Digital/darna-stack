@@ -1,17 +1,9 @@
-import { Data } from "effect"
-import { z } from "zod"
-import type { TodoId } from "./todo.model.js"
+import { HttpApiSchema } from "@effect/platform"
+import { Schema } from "effect"
+import { TodoId } from "./todo.model.js"
 
-export class TodoNotFound extends Data.TaggedError("TodoNotFound")<{
-  readonly id: TodoId
-}> {}
-
-export const todoErrorCatalog = {
-  TodoNotFound: {
-    code: "TODO_NOT_FOUND",
-    status: 404,
-    message: "Todo not found",
-    data: z.object({ id: z.string() }),
-    toData: (e: TodoNotFound) => ({ id: e.id as string }),
-  },
-} as const
+export class TodoNotFound extends Schema.TaggedError<TodoNotFound>()(
+  "TodoNotFound",
+  { id: TodoId },
+  HttpApiSchema.annotations({ status: 404 }),
+) {}
