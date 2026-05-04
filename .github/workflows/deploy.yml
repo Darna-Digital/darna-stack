@@ -103,3 +103,23 @@ jobs:
         run: |
           pnpm --filter @darna/docs exec opennextjs-cloudflare build
           pnpm --filter @darna/docs exec opennextjs-cloudflare deploy ${{ steps.setup.outputs.wrangler-args }}
+
+  deploy-web-client:
+    name: Deploy web-client
+    needs: typecheck
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref == 'refs/heads/master' && 'production' || 'staging' }}
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-deploy
+        id: setup
+
+      - name: Build & deploy web-client
+        run: |
+          pnpm --filter web-client exec opennextjs-cloudflare build
+          pnpm --filter web-client exec opennextjs-cloudflare deploy ${{ steps.setup.outputs.wrangler-args }}
