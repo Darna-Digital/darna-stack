@@ -11,3 +11,16 @@ WORKOS_CLIENT_ID=
 # Optional — only needed if you call the WorkOS REST API from this backend
 # (e.g. listing users, creating organizations). Not required for token verification.
 # WORKOS_API_KEY=
+
+# OpenTelemetry → Grafana Cloud. All three must be set for spans to export;
+# otherwise TracingLayer is a no-op (Effect.withSpan calls still run, just
+# don't ship anywhere).
+#
+# Endpoint comes from your Grafana Cloud OTLP integration page, e.g.
+# https://otlp-gateway-prod-eu-west-2.grafana.net/otlp (no trailing slash).
+# OTEL_EXPORTER_OTLP_ENDPOINT=
+# GRAFANA_OTEL_INSTANCE_ID=
+# GRAFANA_OTEL_API_TOKEN=
+#
+# Optional — tags every span with `deployment.environment`. Defaults to "local".
+# OTEL_DEPLOYMENT_ENV=local
