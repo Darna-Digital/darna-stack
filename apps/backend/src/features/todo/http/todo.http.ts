@@ -1,7 +1,10 @@
-import { HttpApiEndpoint, HttpApiGroup } from "@effect/platform"
-import { Schema } from "effect"
+import { HttpApiBuilder, HttpApiEndpoint, HttpApiGroup } from "@effect/platform"
+import { Effect, Layer, Schema } from "effect"
+import { Api } from "../../../api.js"
+import { TodosLive } from "../layer/todo.layer.js"
 import { TodoNotFound } from "../schema/todo.errors.js"
 import { CreateTodo, Todo, TodoId, UpdateTodo } from "../schema/todo.model.js"
+import { Todos } from "../service/todo.service.js"
 
 const IdParam = Schema.Struct({ id: TodoId })
 
@@ -33,3 +36,14 @@ export class TodoApi extends HttpApiGroup.make("todo")
       .addSuccess(Schema.Void, { status: 204 })
       .addError(TodoNotFound),
   ) {}
+
+const TodoHandlersLive = HttpApiBuilder.group(Api, "todo", (handlers) =>
+  handlers
+    .handle("list", () => Todos.list().pipe(Effect.map((arr) => [...arr])))
+    .handle("get", ({ path }) => Todos.getById(path.id))
+    .handle("create", ({ payload }) => Todos.create(payload))
+    .handle("update", ({ path, payload }) => Todos.update(path.id, payload))
+    .handle("remove", ({ path }) => Todos.remove(path.id)),
+)
+
+export const TodoHandlers = TodoHandlersLive.pipe(Layer.provide(TodosLive))
