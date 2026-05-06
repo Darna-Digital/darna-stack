@@ -17,37 +17,60 @@ Backend handlers are Effect programs. Every span you create with `Effect.withSpa
 
 ## Architecture
 
-```text
-┌──────────────────── apps/backend Worker ────────────────────┐
-│                                                             │
-│  HttpApiBuilder.toWebHandler(                               │
-│    Layer.mergeAll(                                          │
-│      ApiLive ◄── Layer.provide(ServicesLayer)               │
-│      │            │                                         │
-│      │            ├── TracingLayer  ── OtlpTracer.layer     │
-│      │            │                    │  ├── FetchHttpClient
-│      │            │                    │  └── OtlpSerialization.layerJson
-│      │            │                                         │
-│      │            └── TodosLive                             │
-│      │                                                      │
-│      ├── HttpApiBuilder.Router.Live                         │
-│      └── HttpServer.layerContext                            │
-│    )                                                        │
-│  )                                                          │
-│                                                             │
-│  Handler  ─►  Effect.withSpan("Todos.list")  ─►  OtlpTracer │
-│                                                  │           │
-└──────────────────────────────────────────────────│──────────┘
-                                                  │
-                          POST /v1/traces  (Basic auth)
-                                                  ▼
-                            Grafana Cloud OTLP gateway
-                                                  │
-                                                  ▼
-                              Tempo  ◄──  Grafana UI / Explore
+### Layer composition
+
+The `Tracer` service is provided to `ApiLive` via `Layer.provide(ServicesLayer)`. Every Effect that runs through HttpApi sees it.
+
+```mermaid
+flowchart TD
+  toWeb["HttpApiBuilder.toWebHandler"]
+  Api["ApiLive (Layer.provide ServicesLayer)"]
+  Router["HttpApiBuilder.Router.Live"]
+  HttpCtx["HttpServer.layerContext"]
+  Services["ServicesLayer"]
+  Tracing["TracingLayer"]
+  Todos["TodosLive"]
+  Otlp["OtlpTracer.layer"]
+  Fetch["FetchHttpClient.layer"]
+  Json["OtlpSerialization.layerJson"]
+
+  toWeb --> Api
+  toWeb --> Router
+  toWeb --> HttpCtx
+  Api --> Services
+  Services --> Tracing
+  Services --> Todos
+  Tracing --> Otlp
+  Otlp --> Fetch
+  Otlp --> Json
 ```
 
-The Tracer service is provided to `ApiLive` via `Layer.provide(ServicesLayer)`. Every Effect that runs through HttpApi sees it. `Effect.withSpan(name)` calls inside services and handlers attach to the current request's trace; `OtlpTracer` batches and exports them on a 5-second interval.
+### Request → trace flow
+
+`Effect.withSpan(name)` inside services and handlers attaches to the current request's trace; `OtlpTracer` batches and exports on a 5-second interval.
+
+```mermaid
+sequenceDiagram
+  participant C as Client
+  participant W as Worker (HttpApi)
+  participant H as Todo handler
+  participant S as Todos service
+  participant T as OtlpTracer
+  participant G as Grafana OTLP gateway
+  participant Tempo as Tempo
+
+  C->>W: GET /todos
+  W->>H: api.todo.list span (auto)
+  H->>S: list()
+  S->>S: Effect.withSpan("Todos.list")
+  S-->>H: Todo[]
+  H-->>W: Todo[]
+  W-->>C: 200 OK
+  Note over T: spans queued, batched
+  T-)G: POST /v1/traces (Basic auth)
+  G->>Tempo: ingest
+  Note over Tempo: queryable in ~5–30s
+```
 
 ## Setup
 

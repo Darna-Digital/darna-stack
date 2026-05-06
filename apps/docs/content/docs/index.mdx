@@ -22,25 +22,21 @@ darna-stack/
 
 ## Request flow
 
-```text
-        ┌─────────────────┐
-        │     WorkOS      │  hosted sign-in, JWKS
-        └────┬───────┬────┘
-   OAuth     │       │ JWT verify
-   callback  ▼       ▼
-   ┌──────────────┐  ┌──────────────┐
-   │    admin     │  │   backend    │
-   │   :3000      │──▶  :4000       │   Bearer <accessToken>
-   │  Next 16     │  │  Hono+Effect │
-   │  AuthKit     │  │  hono-openapi│
-   └──────────────┘  └──────────────┘
-                            │
-                            ▼
-                     /openapi  /docs
+```mermaid
+flowchart TD
+  WorkOS[WorkOS<br/>hosted sign-in, JWKS]
+  Admin[admin :3000<br/>Next 16 + AuthKit]
+  Backend[backend :4000<br/>Hono + Effect + HttpApi]
+  Docs[/openapi · /docs<br/>Scalar UI/]
+
+  Admin -- "OAuth callback" --> WorkOS
+  WorkOS -- "JWT verify (JWKS)" --> Backend
+  Admin -- "Authorization: Bearer &lt;token&gt;" --> Backend
+  Backend --> Docs
 ```
 
 The admin obtains a WorkOS access token via AuthKit, forwards it as
-`Authorization: Bearer …` to the backend, and the backend's `adminMiddleware`
+`Authorization: Bearer …` to the backend, and the backend's auth middleware
 verifies the JWT against the WorkOS JWKS for the same `WORKOS_CLIENT_ID`.
 
 ## Apps
