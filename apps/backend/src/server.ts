@@ -6,11 +6,11 @@ import { Layer } from "effect"
 import { Api } from "./api.js"
 import { TodoHandlers } from "./features/todo/http/todo.handlers.js"
 import { AdminHandlers } from "./features/admin/admin.handlers.js"
-import { ServicesLayer } from "./lib/effect/runtime.js"
+import { TracingLayer } from "./lib/effect/tracing.js"
 
 const ApiLive = HttpApiBuilder.api(Api).pipe(
   Layer.provide([TodoHandlers, AdminHandlers]),
-  Layer.provide(ServicesLayer),
+  Layer.provide(TracingLayer),
 )
 
 const { handler: apiHandler } = HttpApiBuilder.toWebHandler(
