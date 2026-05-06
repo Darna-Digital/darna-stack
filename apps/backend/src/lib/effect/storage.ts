@@ -10,17 +10,17 @@ export type Patch<Row> = {
 
 const DB_SPAN_ATTRS = { "db.system": "postgresql" } as const
 
-export const tryDb = <Result>(name: string, run: () => Promise<Result>) =>
+export const tryDb = <Result>(
+  name: string,
+  run: () => Promise<Result>,
+): Effect.Effect<Result> =>
   Effect.tryPromise({
     try: run,
     catch: (cause) => new StorageError({ cause }),
-  }).pipe(Effect.withSpan(name, { attributes: DB_SPAN_ATTRS }))
-
-export const stripNulls = <Row>(row: object): Row => {
-  const out: Record<string, unknown> = {}
-  for (const key in row) {
-    const value = (row as Record<string, unknown>)[key]
-    if (value !== null) out[key] = value
-  }
-  return out as Row
-}
+  }).pipe(
+    Effect.tapErrorTag("StorageError", (e) =>
+      Effect.logError("Storage error", e.cause),
+    ),
+    Effect.orDie,
+    Effect.withSpan(name, { attributes: DB_SPAN_ATTRS }),
+  )
