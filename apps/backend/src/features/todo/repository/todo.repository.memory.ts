@@ -1,6 +1,6 @@
 import { Effect, Ref } from "effect"
 import type { TodoRepo } from "./todo.repository.js"
-import type { Todo, TodoId } from "./todo.model.js"
+import type { Todo, TodoId } from "../schema/todo.model.js"
 
 export const createMemoryTodoRepo = (
   seed: readonly Todo[] = [],

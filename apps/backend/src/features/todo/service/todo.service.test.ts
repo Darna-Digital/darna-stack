@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest"
 import { Effect, Either } from "effect"
-import { TodosMemory } from "./todo.layer.js"
+import { TodosMemory } from "../layer/todo.layer.js"
 import { Todos } from "./todo.service.js"
-import type { Todo, TodoId } from "./todo.model.js"
+import type { Todo, TodoId } from "../schema/todo.model.js"
 
 const run = <Success, Failure>(
   effect: Effect.Effect<Success, Failure, Todos>,

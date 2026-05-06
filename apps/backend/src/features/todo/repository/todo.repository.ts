@@ -1,6 +1,6 @@
 import { Context, Effect } from "effect"
-import type { StorageError } from "../../lib/effect/storage.js"
-import type { CreateTodo, Todo, TodoId, UpdateTodo } from "./todo.model.js"
+import type { StorageError } from "../../../lib/effect/storage.js"
+import type { CreateTodo, Todo, TodoId, UpdateTodo } from "../schema/todo.model.js"
 
 export interface TodoRepo {
   readonly list: () => Effect.Effect<readonly Todo[], StorageError>

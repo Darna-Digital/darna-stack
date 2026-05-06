@@ -1,7 +1,7 @@
 import { HttpApiBuilder } from "@effect/platform"
 import { Effect } from "effect"
-import { Api } from "../../api.js"
-import { Todos } from "./todo.service.js"
+import { Api } from "../../../api.js"
+import { Todos } from "../service/todo.service.js"
 
 const onStorageError = (e: { readonly cause: unknown }) =>
   Effect.logError("Storage error", e.cause).pipe(Effect.zipRight(Effect.die(e)))

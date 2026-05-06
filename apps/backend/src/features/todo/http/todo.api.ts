@@ -1,7 +1,7 @@
 import { HttpApiEndpoint, HttpApiGroup } from "@effect/platform"
 import { Schema } from "effect"
-import { TodoNotFound } from "./todo.errors.js"
-import { CreateTodo, Todo, TodoId, UpdateTodo } from "./todo.model.js"
+import { TodoNotFound } from "../schema/todo.errors.js"
+import { CreateTodo, Todo, TodoId, UpdateTodo } from "../schema/todo.model.js"
 
 const IdParam = Schema.Struct({ id: TodoId })
 

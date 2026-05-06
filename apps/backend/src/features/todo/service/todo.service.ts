@@ -1,8 +1,8 @@
 import { Effect } from "effect"
-import { TodoRepository } from "./todo.repository.js"
-import { TodoNotFound } from "./todo.errors.js"
-import type { StorageError } from "../../lib/effect/storage.js"
-import type { CreateTodo, Todo, TodoId, UpdateTodo } from "./todo.model.js"
+import { TodoRepository } from "../repository/todo.repository.js"
+import { TodoNotFound } from "../schema/todo.errors.js"
+import type { StorageError } from "../../../lib/effect/storage.js"
+import type { CreateTodo, Todo, TodoId, UpdateTodo } from "../schema/todo.model.js"
 
 export class Todos extends Effect.Service<Todos>()("Todos", {
   accessors: true,

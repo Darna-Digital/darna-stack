@@ -4,7 +4,7 @@ import { cors } from "hono/cors"
 import { Scalar } from "@scalar/hono-api-reference"
 import { Layer } from "effect"
 import { Api } from "./api.js"
-import { TodoHandlers } from "./features/todo/todo.handlers.js"
+import { TodoHandlers } from "./features/todo/http/todo.handlers.js"
 import { AdminHandlers } from "./features/admin/admin.handlers.js"
 import { ServicesLayer } from "./lib/effect/runtime.js"
 

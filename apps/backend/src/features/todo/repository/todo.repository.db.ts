@@ -1,10 +1,10 @@
 import { Effect } from "effect"
 import { eq } from "drizzle-orm"
-import { db } from "../../lib/db/client.js"
-import { todos } from "../../lib/db/schema.js"
-import { tryDb } from "../../lib/effect/storage.js"
+import { db } from "../../../lib/db/client.js"
+import { todos } from "../../../lib/db/schema.js"
+import { tryDb } from "../../../lib/effect/storage.js"
 import type { TodoRepo } from "./todo.repository.js"
-import type { Todo, TodoId } from "./todo.model.js"
+import type { Todo, TodoId } from "../schema/todo.model.js"
 
 const rowToTodo = (row: typeof todos.$inferSelect): Todo => ({
   id: row.id as TodoId,
