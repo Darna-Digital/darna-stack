@@ -13,12 +13,6 @@ const CreateTodo = z.object({
 type CreateTodoInput = z.infer<typeof CreateTodo>;
 
 export function TodoList() {
-  // const [hasHydrated, setHasHydrated] = useState(false);
-  //
-  // useEffect(() => {
-  //   setHasHydrated(true);
-  // }, []);
-
   const qc = useQueryClient();
   const invalidateList = () => qc.invalidateQueries({ queryKey: ["get", "/api/todos"] });
 
