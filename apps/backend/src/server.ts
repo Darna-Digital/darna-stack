@@ -28,6 +28,6 @@ export const app = new Hono()
   .get("/health", (c) => c.json({ ok: true }))
   .get("/openapi", (c) => c.json(spec as object))
   .get("/docs", Scalar({ url: "/openapi", pageTitle: "Darna Backend — API" }))
-  .all("/*", (c) => apiHandler(c.req.raw))
+  .all("/api/*", (c) => apiHandler(c.req.raw))
 
 export type AppType = typeof app

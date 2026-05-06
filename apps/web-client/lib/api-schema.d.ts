@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/todos": {
+    "/api/todos": {
         parameters: {
             query?: never;
             header?: never;
@@ -20,7 +20,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/todos/{id}": {
+    "/api/todos/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -36,7 +36,7 @@ export interface paths {
         patch: operations["todo.update"];
         trace?: never;
     };
-    "/admin/me": {
+    "/api/admin/me": {
         parameters: {
             query?: never;
             header?: never;

@@ -14,17 +14,17 @@ type CreateTodoInput = z.infer<typeof CreateTodo>
 export function TodoList() {
   const qc = useQueryClient()
   const invalidateList = () =>
-    qc.invalidateQueries({ queryKey: ["get", "/todos"] })
+    qc.invalidateQueries({ queryKey: ["get", "/api/todos"] })
 
-  const { data: todos } = $api.useSuspenseQuery("get", "/todos")
+  const { data: todos } = $api.useSuspenseQuery("get", "/api/todos")
 
-  const create = $api.useMutation("post", "/todos", {
+  const create = $api.useMutation("post", "/api/todos", {
     onSuccess: invalidateList,
   })
-  const update = $api.useMutation("patch", "/todos/{id}", {
+  const update = $api.useMutation("patch", "/api/todos/{id}", {
     onSuccess: invalidateList,
   })
-  const remove = $api.useMutation("delete", "/todos/{id}", {
+  const remove = $api.useMutation("delete", "/api/todos/{id}", {
     onSuccess: invalidateList,
   })
 
