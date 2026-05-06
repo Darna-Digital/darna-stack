@@ -5,7 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { $api } from "@/lib/api";
-import { useEffect, useState } from "react";
 
 const CreateTodo = z.object({
   title: z.string().trim().min(1, "Required").max(200),
@@ -14,20 +13,20 @@ const CreateTodo = z.object({
 type CreateTodoInput = z.infer<typeof CreateTodo>;
 
 export function TodoList() {
-  const [hasHydrated, setHasHydrated] = useState(false);
-
-  useEffect(() => {
-    setHasHydrated(true);
-  }, []);
+  // const [hasHydrated, setHasHydrated] = useState(false);
+  //
+  // useEffect(() => {
+  //   setHasHydrated(true);
+  // }, []);
 
   const qc = useQueryClient();
   const invalidateList = () => qc.invalidateQueries({ queryKey: ["get", "/api/todos"] });
 
-  const { data: todos } = $api.useSuspenseQuery("get", "/api/todos");
-  const { data: projects } = $api.useSuspenseQuery("get", "/api/projects");
+  const { data: todos } = $api.useQuery("get", "/api/todos");
+  const { data: projects } = $api.useQuery("get", "/api/projects");
 
   const projectName = (id: string | null) =>
-    id ? (projects.find((p) => p.id === id)?.name ?? "—") : null;
+    id ? (projects?.find((p) => p.id === id)?.name ?? "—") : null;
 
   const create = $api.useMutation("post", "/api/todos", {
     onSuccess: invalidateList,
@@ -53,8 +52,6 @@ export function TodoList() {
 
   const titleError = form.formState.errors.title?.message;
 
-  if (!hasHydrated) return null;
-
   return (
     <div className="mt-8 space-y-6">
       <form className="space-y-2" onSubmit={onSubmit}>
@@ -71,7 +68,7 @@ export function TodoList() {
             className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900"
           >
             <option value="">No project</option>
-            {projects.map((p) => (
+            {projects?.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
               </option>
@@ -88,11 +85,11 @@ export function TodoList() {
         {titleError ? <p className="text-xs text-red-600">{titleError}</p> : null}
       </form>
 
-      {todos.length === 0 ? (
+      {todos?.length === 0 ? (
         <p className="text-sm text-zinc-500">No todos yet.</p>
       ) : (
         <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
-          {todos.map((t) => (
+          {todos?.map((t) => (
             <li key={t.id} className="flex items-center gap-3 py-3 text-sm">
               <input
                 type="checkbox"
