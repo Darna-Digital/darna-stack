@@ -1,4 +1,4 @@
 {
   "title": "Darna Stack",
-  "pages": ["index", "backend", "admin", "auth", "deploy"]
+  "pages": ["index", "backend", "admin", "auth", "tracing", "deploy"]
 }
