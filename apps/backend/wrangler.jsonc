@@ -18,6 +18,7 @@
     },
   },
   "routes": [{ "pattern": "darna-stack-backend.darnadigital.com", "custom_domain": true }],
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "44ef9aa003384c76965ec29d2624e0d9" }],
   "env": {
     "staging": {
       "name": "darna-backend-staging",

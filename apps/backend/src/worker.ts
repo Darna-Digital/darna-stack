@@ -1,5 +1,13 @@
 import { app } from "./server.js";
+import { setRuntimeEnv } from "./lib/db/client.js";
 
-// Cloudflare Workers entrypoint — Hono is fetch-native, so we just export the app.
-// Local Node dev still uses src/index.ts (@hono/node-server). They share src/server.ts.
-export default app;
+export interface Env {
+  HYPERDRIVE: Hyperdrive;
+}
+
+export default {
+  fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    setRuntimeEnv(env);
+    return app.fetch(request, env, ctx);
+  },
+} satisfies ExportedHandler<Env>;

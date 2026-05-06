@@ -5,14 +5,26 @@ import * as schema from "./schema.js";
 
 export type Db = ReturnType<typeof drizzle<typeof schema>>;
 
+let runtimeEnv: { HYPERDRIVE?: Hyperdrive } | undefined;
+export const setRuntimeEnv = (env: { HYPERDRIVE?: Hyperdrive } | undefined) => {
+  runtimeEnv = env;
+};
+
+const getConnectionString = (): string => {
+  const hd = runtimeEnv?.HYPERDRIVE?.connectionString;
+  if (hd) return hd;
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  throw new Error("DATABASE_URL is not set. See apps/backend/.env.");
+};
+
 let instance: Db | undefined;
 
 const init = (): Db => {
   if (instance) return instance;
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL is not set. See apps/backend/.env.");
-  }
-  const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+  const pool = new pg.Pool({ connectionString: getConnectionString() });
+  pool.on("error", () => {
+    instance = undefined;
+  });
   instance = drizzle(pool, { schema });
   return instance;
 };
