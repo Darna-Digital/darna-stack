@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { $api } from "@/lib/api";
+import { useEffect, useState } from "react";
 
 const CreateTodo = z.object({
   title: z.string().trim().min(1, "Required").max(200),
@@ -13,6 +14,12 @@ const CreateTodo = z.object({
 type CreateTodoInput = z.infer<typeof CreateTodo>;
 
 export function TodoList() {
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  useEffect(() => {
+    setHasHydrated(true);
+  }, []);
+
   const qc = useQueryClient();
   const invalidateList = () => qc.invalidateQueries({ queryKey: ["get", "/api/todos"] });
 
@@ -45,6 +52,8 @@ export function TodoList() {
   });
 
   const titleError = form.formState.errors.title?.message;
+
+  if (!hasHydrated) return null;
 
   return (
     <div className="mt-8 space-y-6">
