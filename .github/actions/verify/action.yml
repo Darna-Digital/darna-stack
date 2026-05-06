@@ -17,6 +17,9 @@ runs:
       run: pnpm install --frozen-lockfile
 
     - shell: bash
+      run: pnpm format:check
+
+    - shell: bash
       run: pnpm typecheck
 
     - shell: bash
