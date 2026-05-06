@@ -1,4 +1,5 @@
 import { TodoList } from "./todo-list";
+import { Suspense } from "react";
 
 export const metadata = {
   title: "Todos",
@@ -11,7 +12,9 @@ export default function TodosPage() {
 
       <p className="mt-1 text-sm text-zinc-500">End-to-end typed via open api + Effect.</p>
 
-      <TodoList />
+      <Suspense fallback={null}>
+        <TodoList />
+      </Suspense>
     </main>
   );
 }
