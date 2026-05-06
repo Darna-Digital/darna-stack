@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest"
 import { Effect, Either } from "effect"
-import { TodosMemory } from "./todo.layer.js"
+import { TodosMemory } from "../layer/todo.layer.js"
 import { Todos } from "./todo.service.js"
-import type { Todo, TodoId } from "./todo.model.js"
+import type { Todo, TodoId } from "../schema/todo.model.js"
 
 const run = <Success, Failure>(
   effect: Effect.Effect<Success, Failure, Todos>,
@@ -17,6 +17,7 @@ const seedTodo: Todo = {
   title: "seed",
   done: false,
   createdAt: "2026-01-01T00:00:00.000Z",
+  projectId: null,
 }
 
 describe("Todos.create", () => {
@@ -57,8 +58,7 @@ describe("Todos.getById", () => {
     const missing = "00000000-0000-4000-8000-000000000000" as TodoId
     const result = await run(Todos.getById(missing))
     expect(Either.isLeft(result)).toBe(true)
-    if (Either.isLeft(result)) {
-      expect(result.left._tag).toBe("TodoNotFound")
+    if (Either.isLeft(result) && result.left._tag === "TodoNotFound") {
       expect(result.left.id).toBe(missing)
     }
   })

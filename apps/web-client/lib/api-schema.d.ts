@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/todos": {
+    "/api/todos": {
         parameters: {
             query?: never;
             header?: never;
@@ -20,7 +20,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/todos/{id}": {
+    "/api/todos/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -36,7 +36,55 @@ export interface paths {
         patch: operations["todo.update"];
         trace?: never;
     };
-    "/admin/me": {
+    "/api/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["project.list"];
+        put?: never;
+        post: operations["project.create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["project.get"];
+        put?: never;
+        post?: never;
+        delete: operations["project.remove"];
+        options?: never;
+        head?: never;
+        patch: operations["project.update"];
+        trace?: never;
+    };
+    "/api/projects/{id}/todos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["project.listTodos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/me": {
         parameters: {
             query?: never;
             header?: never;
@@ -89,6 +137,15 @@ export interface components {
             /** @enum {string} */
             _tag: "TodoNotFound";
         };
+        ProjectNotFound: {
+            /**
+             * Format: uuid
+             * @description a Universally Unique Identifier
+             */
+            id: string;
+            /** @enum {string} */
+            _tag: "ProjectNotFound";
+        };
         Unauthorized: {
             reason: string;
             /** @enum {string} */
@@ -131,6 +188,7 @@ export interface operations {
                         title: string;
                         done: boolean;
                         createdAt: string;
+                        projectId: string | null;
                     }[];
                 };
             };
@@ -160,6 +218,7 @@ export interface operations {
                      * @description a string at most 200 character(s) long
                      */
                     title: string;
+                    projectId?: string | null;
                 };
             };
         };
@@ -183,6 +242,7 @@ export interface operations {
                         title: string;
                         done: boolean;
                         createdAt: string;
+                        projectId: string | null;
                     };
                 };
             };
@@ -228,6 +288,7 @@ export interface operations {
                         title: string;
                         done: boolean;
                         createdAt: string;
+                        projectId: string | null;
                     };
                 };
             };
@@ -309,6 +370,7 @@ export interface operations {
                      */
                     title?: string;
                     done?: boolean;
+                    projectId?: string | null;
                 };
             };
         };
@@ -332,6 +394,7 @@ export interface operations {
                         title: string;
                         done: boolean;
                         createdAt: string;
+                        projectId: string | null;
                     };
                 };
             };
@@ -351,6 +414,308 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TodoNotFound"];
+                };
+            };
+        };
+    };
+    "project.list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: uuid
+                         * @description a Universally Unique Identifier
+                         */
+                        id: string;
+                        /**
+                         * maxLength(200)
+                         * @description a string at most 200 character(s) long
+                         */
+                        name: string;
+                        createdAt: string;
+                    }[];
+                };
+            };
+            /** @description The request did not match the expected schema */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HttpApiDecodeError"];
+                };
+            };
+        };
+    };
+    "project.create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * maxLength(200)
+                     * @description a string at most 200 character(s) long
+                     */
+                    name: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: uuid
+                         * @description a Universally Unique Identifier
+                         */
+                        id: string;
+                        /**
+                         * maxLength(200)
+                         * @description a string at most 200 character(s) long
+                         */
+                        name: string;
+                        createdAt: string;
+                    };
+                };
+            };
+            /** @description The request did not match the expected schema */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HttpApiDecodeError"];
+                };
+            };
+        };
+    };
+    "project.get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description a Universally Unique Identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: uuid
+                         * @description a Universally Unique Identifier
+                         */
+                        id: string;
+                        /**
+                         * maxLength(200)
+                         * @description a string at most 200 character(s) long
+                         */
+                        name: string;
+                        createdAt: string;
+                    };
+                };
+            };
+            /** @description The request did not match the expected schema */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HttpApiDecodeError"];
+                };
+            };
+            /** @description ProjectNotFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectNotFound"];
+                };
+            };
+        };
+    };
+    "project.remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description a Universally Unique Identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The request did not match the expected schema */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HttpApiDecodeError"];
+                };
+            };
+            /** @description ProjectNotFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectNotFound"];
+                };
+            };
+        };
+    };
+    "project.update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description a Universally Unique Identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * maxLength(200)
+                     * @description a string at most 200 character(s) long
+                     */
+                    name?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: uuid
+                         * @description a Universally Unique Identifier
+                         */
+                        id: string;
+                        /**
+                         * maxLength(200)
+                         * @description a string at most 200 character(s) long
+                         */
+                        name: string;
+                        createdAt: string;
+                    };
+                };
+            };
+            /** @description The request did not match the expected schema */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HttpApiDecodeError"];
+                };
+            };
+            /** @description ProjectNotFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectNotFound"];
+                };
+            };
+        };
+    };
+    "project.listTodos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description a Universally Unique Identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: uuid
+                         * @description a Universally Unique Identifier
+                         */
+                        id: string;
+                        /**
+                         * maxLength(200)
+                         * @description a string at most 200 character(s) long
+                         */
+                        title: string;
+                        done: boolean;
+                        createdAt: string;
+                        projectId: string | null;
+                    }[];
+                };
+            };
+            /** @description The request did not match the expected schema */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HttpApiDecodeError"];
+                };
+            };
+            /** @description ProjectNotFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectNotFound"];
                 };
             };
         };

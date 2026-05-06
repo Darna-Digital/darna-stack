@@ -1,9 +1,10 @@
 import { HttpApiBuilder } from "@effect/platform"
-import { Effect } from "effect"
-import { Api } from "../../api.js"
-import { Todos } from "./todo.service.js"
+import { Effect, Layer } from "effect"
+import { Api } from "../../../api.js"
+import { TodosLive } from "../layer/todo.layer.js"
+import { Todos } from "../service/todo.service.js"
 
-export const TodoHandlers = HttpApiBuilder.group(Api, "todo", (handlers) =>
+const TodoHandlersLive = HttpApiBuilder.group(Api, "todo", (handlers) =>
   handlers
     .handle("list", () => Todos.list().pipe(Effect.map((arr) => [...arr])))
     .handle("get", ({ path }) => Todos.getById(path.id))
@@ -11,3 +12,5 @@ export const TodoHandlers = HttpApiBuilder.group(Api, "todo", (handlers) =>
     .handle("update", ({ path, payload }) => Todos.update(path.id, payload))
     .handle("remove", ({ path }) => Todos.remove(path.id)),
 )
+
+export const TodoHandlers = TodoHandlersLive.pipe(Layer.provide(TodosLive))
