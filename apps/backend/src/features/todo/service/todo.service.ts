@@ -1,4 +1,5 @@
 import { Effect } from "effect"
+import type { ProjectId } from "../../project/schema/project.model.js"
 import { TodoRepository } from "../repository/todo.repository.js"
 import { TodoNotFound } from "../schema/todo.errors.js"
 import type { CreateTodo, Todo, TodoId, UpdateTodo } from "../schema/todo.model.js"
@@ -10,6 +11,15 @@ export class Todos extends Effect.Service<Todos>()("Todos", {
 
     const list = (): Effect.Effect<readonly Todo[]> =>
       repo.list().pipe(Effect.withSpan("Todos.list"))
+
+    const listByProject = (
+      projectId: ProjectId,
+    ): Effect.Effect<readonly Todo[]> =>
+      repo.listByProject(projectId).pipe(
+        Effect.withSpan("Todos.listByProject", {
+          attributes: { "project.id": projectId },
+        }),
+      )
 
     const getById = (id: TodoId): Effect.Effect<Todo, TodoNotFound> =>
       Effect.gen(function* () {
@@ -37,6 +47,6 @@ export class Todos extends Effect.Service<Todos>()("Todos", {
         if (!removed) return yield* Effect.fail(new TodoNotFound({ id }))
       }).pipe(Effect.withSpan("Todos.remove", { attributes: { "todo.id": id } }))
 
-    return { list, getById, create, update, remove } as const
+    return { list, listByProject, getById, create, update, remove } as const
   }),
 }) {}

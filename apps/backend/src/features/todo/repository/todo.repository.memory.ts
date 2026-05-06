@@ -13,6 +13,13 @@ export const createMemoryTodoRepo = (
     const list: TodoRepo["list"] = () =>
       Ref.get(ref).pipe(Effect.map((m) => Array.from(m.values())))
 
+    const listByProject: TodoRepo["listByProject"] = (projectId) =>
+      Ref.get(ref).pipe(
+        Effect.map((m) =>
+          Array.from(m.values()).filter((t) => t.projectId === projectId),
+        ),
+      )
+
     const findById: TodoRepo["findById"] = (id) =>
       Ref.get(ref).pipe(Effect.map((m) => m.get(id)))
 
@@ -24,6 +31,7 @@ export const createMemoryTodoRepo = (
             title: input.title,
             done: false,
             createdAt: new Date().toISOString(),
+            projectId: input.projectId ?? null,
           }
           return Ref.update(ref, (m) => new Map(m).set(todo.id, todo)).pipe(
             Effect.as(todo),
@@ -39,6 +47,9 @@ export const createMemoryTodoRepo = (
           ...existing,
           ...(patch.title !== undefined ? { title: patch.title } : {}),
           ...(patch.done !== undefined ? { done: patch.done } : {}),
+          ...(patch.projectId !== undefined
+            ? { projectId: patch.projectId }
+            : {}),
         }
         const nextMap = new Map(m).set(id, next)
         return [next, nextMap] as const
@@ -52,5 +63,5 @@ export const createMemoryTodoRepo = (
         return [true, nextMap] as const
       })
 
-    return { list, findById, create, update, remove }
+    return { list, listByProject, findById, create, update, remove }
   })

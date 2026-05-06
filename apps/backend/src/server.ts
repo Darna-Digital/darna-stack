@@ -5,11 +5,12 @@ import { Scalar } from "@scalar/hono-api-reference"
 import { Layer } from "effect"
 import { Api } from "./api.js"
 import { TodoHandlers } from "./features/todo/http/todo.handlers.js"
+import { ProjectHandlers } from "./features/project/http/project.handlers.js"
 import { AdminHandlers } from "./features/admin/admin.handlers.js"
 import { TracingLayer } from "./lib/effect/tracing.js"
 
 const ApiLive = HttpApiBuilder.api(Api).pipe(
-  Layer.provide([TodoHandlers, AdminHandlers]),
+  Layer.provide([TodoHandlers, ProjectHandlers, AdminHandlers]),
   Layer.provide(TracingLayer),
 )
 
