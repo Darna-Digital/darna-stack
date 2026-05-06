@@ -25,7 +25,7 @@
     "cf-typegen": "wrangler types",
     "db:generate": "drizzle-kit generate",
     "db:check": "drizzle-kit check",
-    "db:migrate": "tsx --env-file-if-exists=.env scripts/migrate.ts",
+    "db:migrate": "tsx --env-file-if-exists=.env src/scripts/migrate.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"
   },
