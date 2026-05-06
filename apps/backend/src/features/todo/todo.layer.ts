@@ -1,12 +1,15 @@
 import { Layer } from "effect"
-import { TodoRepository, makeMemoryTodoRepo } from "./todo.repository.js"
+import { TodoRepository } from "./todo.repository.js"
+import { createMemoryTodoRepo } from "./todo.repository.memory.js"
+import { createDbTodoRepo } from "./todo.repository.db.js"
 import { Todos } from "./todo.service.js"
 import type { Todo } from "./todo.model.js"
 
 export const TodosMemory = (seed: readonly Todo[] = []) =>
   Todos.Default.pipe(
-    Layer.provide(Layer.effect(TodoRepository, makeMemoryTodoRepo(seed))),
+    Layer.provide(Layer.effect(TodoRepository, createMemoryTodoRepo(seed))),
   )
 
-// TODO: swap to a Drizzle-backed layer once the db repo lands
-export const TodosLive = TodosMemory()
+export const TodosLive = Todos.Default.pipe(
+  Layer.provide(Layer.succeed(TodoRepository, createDbTodoRepo)),
+)

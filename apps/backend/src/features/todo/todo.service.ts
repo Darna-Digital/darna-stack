@@ -1,6 +1,7 @@
 import { Effect } from "effect"
 import { TodoRepository } from "./todo.repository.js"
 import { TodoNotFound } from "./todo.errors.js"
+import type { StorageError } from "../../lib/effect/storage.js"
 import type { CreateTodo, Todo, TodoId, UpdateTodo } from "./todo.model.js"
 
 export class Todos extends Effect.Service<Todos>()("Todos", {
@@ -8,25 +9,36 @@ export class Todos extends Effect.Service<Todos>()("Todos", {
   effect: Effect.gen(function* () {
     const repo = yield* TodoRepository
 
-    const list = (): Effect.Effect<readonly Todo[]> =>
+    const list = (): Effect.Effect<readonly Todo[], StorageError> =>
       repo.list().pipe(Effect.withSpan("Todos.list"))
 
-    const getById = (id: TodoId): Effect.Effect<Todo, TodoNotFound> =>
+    const getById = (
+      id: TodoId,
+    ): Effect.Effect<Todo, TodoNotFound | StorageError> =>
       repo.findById(id).pipe(
-        Effect.flatMap((t) => (t ? Effect.succeed(t) : Effect.fail(new TodoNotFound({ id })))),
+        Effect.flatMap((t) =>
+          t ? Effect.succeed(t) : Effect.fail(new TodoNotFound({ id })),
+        ),
         Effect.withSpan("Todos.getById", { attributes: { "todo.id": id } }),
       )
 
-    const create = (input: CreateTodo): Effect.Effect<Todo> =>
+    const create = (input: CreateTodo): Effect.Effect<Todo, StorageError> =>
       repo.create(input).pipe(Effect.withSpan("Todos.create"))
 
-    const update = (id: TodoId, patch: UpdateTodo): Effect.Effect<Todo, TodoNotFound> =>
+    const update = (
+      id: TodoId,
+      patch: UpdateTodo,
+    ): Effect.Effect<Todo, TodoNotFound | StorageError> =>
       repo.update(id, patch).pipe(
-        Effect.flatMap((t) => (t ? Effect.succeed(t) : Effect.fail(new TodoNotFound({ id })))),
+        Effect.flatMap((t) =>
+          t ? Effect.succeed(t) : Effect.fail(new TodoNotFound({ id })),
+        ),
         Effect.withSpan("Todos.update", { attributes: { "todo.id": id } }),
       )
 
-    const remove = (id: TodoId): Effect.Effect<void, TodoNotFound> =>
+    const remove = (
+      id: TodoId,
+    ): Effect.Effect<void, TodoNotFound | StorageError> =>
       repo.remove(id).pipe(
         Effect.flatMap((removed) =>
           removed ? Effect.void : Effect.fail(new TodoNotFound({ id })),

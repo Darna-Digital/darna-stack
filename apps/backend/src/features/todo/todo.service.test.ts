@@ -57,8 +57,7 @@ describe("Todos.getById", () => {
     const missing = "00000000-0000-4000-8000-000000000000" as TodoId
     const result = await run(Todos.getById(missing))
     expect(Either.isLeft(result)).toBe(true)
-    if (Either.isLeft(result)) {
-      expect(result.left._tag).toBe("TodoNotFound")
+    if (Either.isLeft(result) && result.left._tag === "TodoNotFound") {
       expect(result.left.id).toBe(missing)
     }
   })

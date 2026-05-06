@@ -22,9 +22,29 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/verify
 
+  migrate-backend:
+    name: Migrate backend database
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref == 'refs/heads/master' && 'production' || 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-deploy
+
+      - name: Apply database migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL secret is not set for this environment."
+            exit 1
+          fi
+          pnpm --filter @darna/backend run db:migrate
+
   deploy-backend:
     name: Deploy backend
-    needs: verify
+    needs: [verify, migrate-backend]
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.ref == 'refs/heads/master' && 'production' || 'staging' }}
