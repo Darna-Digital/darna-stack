@@ -40,23 +40,21 @@ jobs:
         env:
           OTEL_DEPLOYMENT_ENV: ${{ vars.OTEL_DEPLOYMENT_ENV }}
           OTEL_EXPORTER_OTLP_ENDPOINT: ${{ vars.OTEL_EXPORTER_OTLP_ENDPOINT }}
-          GRAFANA_OTEL_INSTANCE_ID: ${{ vars.GRAFANA_OTEL_INSTANCE_ID }}
           WRANGLER_ARGS: ${{ steps.setup.outputs.wrangler-args }}
         run: |
           ARGS="$WRANGLER_ARGS"
           [ -n "$OTEL_DEPLOYMENT_ENV" ]         && ARGS="$ARGS --var OTEL_DEPLOYMENT_ENV:$OTEL_DEPLOYMENT_ENV"
           [ -n "$OTEL_EXPORTER_OTLP_ENDPOINT" ] && ARGS="$ARGS --var OTEL_EXPORTER_OTLP_ENDPOINT:$OTEL_EXPORTER_OTLP_ENDPOINT"
-          [ -n "$GRAFANA_OTEL_INSTANCE_ID" ]    && ARGS="$ARGS --var GRAFANA_OTEL_INSTANCE_ID:$GRAFANA_OTEL_INSTANCE_ID"
           pnpm --filter @darna/backend exec wrangler deploy $ARGS
 
       - name: Sync backend Worker secrets
         env:
           WORKOS_CLIENT_ID: ${{ secrets.WORKOS_CLIENT_ID }}
-          GRAFANA_OTEL_API_TOKEN: ${{ secrets.GRAFANA_OTEL_API_TOKEN }}
+          GRAFANA_OTEL_AUTH_HEADER: ${{ secrets.GRAFANA_OTEL_AUTH_HEADER }}
           WRANGLER_ARGS: ${{ steps.setup.outputs.wrangler-args }}
         run: |
-          printf '%s' "$WORKOS_CLIENT_ID"        | pnpm --filter @darna/backend exec wrangler secret put WORKOS_CLIENT_ID        $WRANGLER_ARGS
-          printf '%s' "$GRAFANA_OTEL_API_TOKEN"  | pnpm --filter @darna/backend exec wrangler secret put GRAFANA_OTEL_API_TOKEN  $WRANGLER_ARGS
+          printf '%s' "$WORKOS_CLIENT_ID"          | pnpm --filter @darna/backend exec wrangler secret put WORKOS_CLIENT_ID          $WRANGLER_ARGS
+          printf '%s' "$GRAFANA_OTEL_AUTH_HEADER"  | pnpm --filter @darna/backend exec wrangler secret put GRAFANA_OTEL_AUTH_HEADER  $WRANGLER_ARGS
 
   deploy-admin:
     name: Deploy admin
