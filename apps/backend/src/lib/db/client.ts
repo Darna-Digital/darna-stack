@@ -10,10 +10,14 @@ export const setRuntimeEnv = (env: { HYPERDRIVE?: Hyperdrive } | undefined) => {
   runtimeEnv = env;
 };
 
-const getConnectionString = (): string => {
+const getPoolConfig = (): pg.PoolConfig => {
   const hd = runtimeEnv?.HYPERDRIVE?.connectionString;
-  if (hd) return hd;
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  if (hd) {
+    // Hyperdrive terminates TLS at its edge; the Worker→Hyperdrive hop is
+    // cleartext over Cloudflare's internal network, so disable client SSL.
+    return { connectionString: hd, ssl: false };
+  }
+  if (process.env.DATABASE_URL) return { connectionString: process.env.DATABASE_URL };
   throw new Error("DATABASE_URL is not set. See apps/backend/.env.");
 };
 
@@ -21,7 +25,7 @@ let instance: Db | undefined;
 
 const init = (): Db => {
   if (instance) return instance;
-  const pool = new pg.Pool({ connectionString: getConnectionString() });
+  const pool = new pg.Pool(getPoolConfig());
   pool.on("error", () => {
     instance = undefined;
   });
