@@ -6,7 +6,7 @@ export type TodoId = typeof TodoId.Type;
 
 export const Todo = Schema.Struct({
   id: TodoId,
-  title: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(200)),
+  title: Schema.String,
   done: Schema.Boolean,
   createdAt: Schema.String,
   projectId: Schema.NullOr(ProjectId),

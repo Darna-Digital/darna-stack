@@ -5,7 +5,7 @@ export type ProjectId = typeof ProjectId.Type;
 
 export const Project = Schema.Struct({
   id: ProjectId,
-  name: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(200)),
+  name: Schema.String,
   createdAt: Schema.String,
 });
 export type Project = typeof Project.Type;
