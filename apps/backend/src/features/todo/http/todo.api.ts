@@ -1,14 +1,12 @@
-import { HttpApiEndpoint, HttpApiGroup } from "@effect/platform"
-import { Schema } from "effect"
-import { TodoNotFound } from "../schema/todo.errors.js"
-import { CreateTodo, Todo, TodoId, UpdateTodo } from "../schema/todo.model.js"
+import { HttpApiEndpoint, HttpApiGroup } from "@effect/platform";
+import { Schema } from "effect";
+import { TodoNotFound } from "../schema/todo.errors.js";
+import { CreateTodo, Todo, TodoId, UpdateTodo } from "../schema/todo.model.js";
 
-const IdParam = Schema.Struct({ id: TodoId })
+const IdParam = Schema.Struct({ id: TodoId });
 
 export class TodoApi extends HttpApiGroup.make("todo")
-  .add(
-    HttpApiEndpoint.get("list", "/todos").addSuccess(Schema.Array(Todo)),
-  )
+  .add(HttpApiEndpoint.get("list", "/todos").addSuccess(Schema.Array(Todo)))
   .add(
     HttpApiEndpoint.get("get", "/todos/:id")
       .setPath(IdParam)

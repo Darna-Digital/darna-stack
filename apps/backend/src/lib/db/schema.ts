@@ -1,10 +1,10 @@
-import { boolean, pgTable, text, uuid, varchar } from "drizzle-orm/pg-core"
+import { boolean, pgTable, text, uuid, varchar } from "drizzle-orm/pg-core";
 
 export const projects = pgTable("projects", {
   id: uuid("id").primaryKey(),
   name: varchar("name", { length: 200 }).notNull(),
   createdAt: text("created_at").notNull(),
-})
+});
 
 export const todos = pgTable("todos", {
   id: uuid("id").primaryKey(),
@@ -14,4 +14,4 @@ export const todos = pgTable("todos", {
   projectId: uuid("project_id").references(() => projects.id, {
     onDelete: "set null",
   }),
-})
+});

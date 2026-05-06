@@ -1,6 +1,6 @@
-import { HttpApiSchema } from "@effect/platform"
-import { Schema } from "effect"
-import { ProjectId } from "./project.model.js"
+import { HttpApiSchema } from "@effect/platform";
+import { Schema } from "effect";
+import { ProjectId } from "./project.model.js";
 
 export class ProjectNotFound extends Schema.TaggedError<ProjectNotFound>()(
   "ProjectNotFound",

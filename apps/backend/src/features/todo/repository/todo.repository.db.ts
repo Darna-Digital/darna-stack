@@ -1,11 +1,11 @@
-import { Effect } from "effect"
-import { eq } from "drizzle-orm"
-import { db } from "../../../lib/db/client.js"
-import { todos } from "../../../lib/db/schema.js"
-import { tryDb } from "../../../lib/effect/storage.js"
-import type { TodoRepo } from "./todo.repository.js"
-import type { ProjectId } from "../../project/schema/project.model.js"
-import type { Todo, TodoId } from "../schema/todo.model.js"
+import { Effect } from "effect";
+import { eq } from "drizzle-orm";
+import { db } from "../../../lib/db/client.js";
+import { todos } from "../../../lib/db/schema.js";
+import { tryDb } from "../../../lib/effect/storage.js";
+import type { TodoRepo } from "./todo.repository.js";
+import type { ProjectId } from "../../project/schema/project.model.js";
+import type { Todo, TodoId } from "../schema/todo.model.js";
 
 const rowToTodo = (row: typeof todos.$inferSelect): Todo => ({
   id: row.id as TodoId,
@@ -13,7 +13,7 @@ const rowToTodo = (row: typeof todos.$inferSelect): Todo => ({
   done: row.done,
   createdAt: row.createdAt,
   projectId: (row.projectId as ProjectId | null) ?? null,
-})
+});
 
 export const createDbTodoRepo: TodoRepo = {
   list: () =>
@@ -27,9 +27,9 @@ export const createDbTodoRepo: TodoRepo = {
     ).pipe(Effect.map((rows) => rows.map(rowToTodo))),
 
   findById: (id) =>
-    tryDb("pg.todos.findById", () =>
-      db.select().from(todos).where(eq(todos.id, id)).limit(1),
-    ).pipe(Effect.map((rows) => (rows[0] ? rowToTodo(rows[0]) : undefined))),
+    tryDb("pg.todos.findById", () => db.select().from(todos).where(eq(todos.id, id)).limit(1)).pipe(
+      Effect.map((rows) => (rows[0] ? rowToTodo(rows[0]) : undefined)),
+    ),
 
   create: (input) =>
     Effect.gen(function* () {
@@ -39,9 +39,9 @@ export const createDbTodoRepo: TodoRepo = {
         done: false,
         createdAt: new Date().toISOString(),
         projectId: input.projectId ?? null,
-      }
-      yield* tryDb("pg.todos.insert", () => db.insert(todos).values(todo))
-      return todo
+      };
+      yield* tryDb("pg.todos.insert", () => db.insert(todos).values(todo));
+      return todo;
     }),
 
   update: (id, patch) =>
@@ -51,9 +51,7 @@ export const createDbTodoRepo: TodoRepo = {
         .set({
           ...(patch.title !== undefined ? { title: patch.title } : {}),
           ...(patch.done !== undefined ? { done: patch.done } : {}),
-          ...(patch.projectId !== undefined
-            ? { projectId: patch.projectId }
-            : {}),
+          ...(patch.projectId !== undefined ? { projectId: patch.projectId } : {}),
         })
         .where(eq(todos.id, id))
         .returning(),
@@ -63,4 +61,4 @@ export const createDbTodoRepo: TodoRepo = {
     tryDb("pg.todos.delete", () =>
       db.delete(todos).where(eq(todos.id, id)).returning({ id: todos.id }),
     ).pipe(Effect.map((rows) => rows.length > 0)),
-}
+};

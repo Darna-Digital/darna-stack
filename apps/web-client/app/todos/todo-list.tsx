@@ -1,51 +1,50 @@
-"use client"
+"use client";
 
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useQueryClient } from "@tanstack/react-query"
-import { z } from "zod"
-import { $api } from "@/lib/api"
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
+import { $api } from "@/lib/api";
 
 const CreateTodo = z.object({
   title: z.string().trim().min(1, "Required").max(200),
   projectId: z.string().uuid().or(z.literal("")).optional(),
-})
-type CreateTodoInput = z.infer<typeof CreateTodo>
+});
+type CreateTodoInput = z.infer<typeof CreateTodo>;
 
 export function TodoList() {
-  const qc = useQueryClient()
-  const invalidateList = () =>
-    qc.invalidateQueries({ queryKey: ["get", "/api/todos"] })
+  const qc = useQueryClient();
+  const invalidateList = () => qc.invalidateQueries({ queryKey: ["get", "/api/todos"] });
 
-  const { data: todos } = $api.useSuspenseQuery("get", "/api/todos")
-  const { data: projects } = $api.useSuspenseQuery("get", "/api/projects")
+  const { data: todos } = $api.useSuspenseQuery("get", "/api/todos");
+  const { data: projects } = $api.useSuspenseQuery("get", "/api/projects");
 
   const projectName = (id: string | null) =>
-    id ? projects.find((p) => p.id === id)?.name ?? "—" : null
+    id ? (projects.find((p) => p.id === id)?.name ?? "—") : null;
 
   const create = $api.useMutation("post", "/api/todos", {
     onSuccess: invalidateList,
-  })
+  });
   const update = $api.useMutation("patch", "/api/todos/{id}", {
     onSuccess: invalidateList,
-  })
+  });
   const remove = $api.useMutation("delete", "/api/todos/{id}", {
     onSuccess: invalidateList,
-  })
+  });
 
   const form = useForm<CreateTodoInput>({
     resolver: zodResolver(CreateTodo),
     defaultValues: { title: "", projectId: "" },
-  })
+  });
 
   const onSubmit = form.handleSubmit(async ({ title, projectId }) => {
     await create.mutateAsync({
       body: { title, projectId: projectId ? projectId : null },
-    })
-    form.reset({ title: "", projectId: projectId ?? "" })
-  })
+    });
+    form.reset({ title: "", projectId: projectId ?? "" });
+  });
 
-  const titleError = form.formState.errors.title?.message
+  const titleError = form.formState.errors.title?.message;
 
   return (
     <div className="mt-8 space-y-6">
@@ -77,9 +76,7 @@ export function TodoList() {
             Add
           </button>
         </div>
-        {titleError ? (
-          <p className="text-xs text-red-600">{titleError}</p>
-        ) : null}
+        {titleError ? <p className="text-xs text-red-600">{titleError}</p> : null}
       </form>
 
       {todos.length === 0 ? (
@@ -99,11 +96,7 @@ export function TodoList() {
                 }
                 className="size-4"
               />
-              <span
-                className={
-                  t.done ? "flex-1 text-zinc-400 line-through" : "flex-1"
-                }
-              >
+              <span className={t.done ? "flex-1 text-zinc-400 line-through" : "flex-1"}>
                 {t.title}
               </span>
               {t.projectId ? (
@@ -113,9 +106,7 @@ export function TodoList() {
               ) : null}
               <button
                 type="button"
-                onClick={() =>
-                  remove.mutate({ params: { path: { id: t.id } } })
-                }
+                onClick={() => remove.mutate({ params: { path: { id: t.id } } })}
                 className="text-xs text-zinc-500 hover:text-red-600"
               >
                 delete
@@ -125,5 +116,5 @@ export function TodoList() {
         </ul>
       )}
     </div>
-  )
+  );
 }

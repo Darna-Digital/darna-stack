@@ -25,6 +25,7 @@
     "react-dom": "19.2.5"
   },
   "devDependencies": {
+    "@darna/lint": "workspace:*",
     "@opennextjs/cloudflare": "^1.19.6",
     "@tailwindcss/postcss": "^4",
     "@types/mdast": "^4.0.4",

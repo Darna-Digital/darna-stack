@@ -42,10 +42,26 @@ verifies the JWT against the WorkOS JWKS for the same `WORKOS_CLIENT_ID`.
 ## Apps
 
 <Cards>
-  <Card title="Backend" href="/docs/backend" description="Hono routes, Effect services, OpenAPI spec, Scalar docs viewer, adminMiddleware." />
-  <Card title="Admin" href="/docs/admin" description="Next.js 16 with WorkOS AuthKit. Edge middleware enforces auth on every route." />
-  <Card title="Auth" href="/docs/auth" description="The WorkOS handshake end-to-end. What lives where." />
-  <Card title="Deploy" href="/docs/deploy" description="Cloudflare Workers via wrangler (backend) and OpenNext (Next.js apps)." />
+  <Card
+    title="Backend"
+    href="/docs/backend"
+    description="Hono routes, Effect services, OpenAPI spec, Scalar docs viewer, adminMiddleware."
+  />
+  <Card
+    title="Admin"
+    href="/docs/admin"
+    description="Next.js 16 with WorkOS AuthKit. Edge middleware enforces auth on every route."
+  />
+  <Card
+    title="Auth"
+    href="/docs/auth"
+    description="The WorkOS handshake end-to-end. What lives where."
+  />
+  <Card
+    title="Deploy"
+    href="/docs/deploy"
+    description="Cloudflare Workers via wrangler (backend) and OpenNext (Next.js apps)."
+  />
 </Cards>
 
 ## Conventions
@@ -65,19 +81,18 @@ verifies the JWT against the WorkOS JWKS for the same `WORKOS_CLIENT_ID`.
   `RenderableError` failures.
 
 <Callout type="info">
-  Every change to a Next.js app needs `turbopack.root` pinned to the monorepo
-  root — pnpm's symlink farm under `node_modules/.pnpm` lives outside the app
-  directory, and Turbopack refuses to compile anything outside its root. See
-  [Deploy](/docs/deploy) for the exact config.
+  Every change to a Next.js app needs `turbopack.root` pinned to the monorepo root — pnpm's symlink
+  farm under `node_modules/.pnpm` lives outside the app directory, and Turbopack refuses to compile
+  anything outside its root. See [Deploy](/docs/deploy) for the exact config.
 </Callout>
 
 ## Top-level scripts
 
-| Command | What it does |
-|---|---|
-| `pnpm dev` | All three apps in parallel |
-| `pnpm dev:backend` / `dev:admin` / `dev:docs` | One app at a time |
-| `pnpm typecheck` | Recursive `tsc --noEmit` |
-| `pnpm deploy` | Backend → admin → docs to Cloudflare Workers |
-| `pnpm deps:check` | `pnpm outdated -r` |
-| `pnpm deps:update` | Interactive `pnpm update -r -i --latest` |
+| Command                                       | What it does                                 |
+| --------------------------------------------- | -------------------------------------------- |
+| `pnpm dev`                                    | All three apps in parallel                   |
+| `pnpm dev:backend` / `dev:admin` / `dev:docs` | One app at a time                            |
+| `pnpm typecheck`                              | Recursive `tsc --noEmit`                     |
+| `pnpm deploy`                                 | Backend → admin → docs to Cloudflare Workers |
+| `pnpm deps:check`                             | `pnpm outdated -r`                           |
+| `pnpm deps:update`                            | Interactive `pnpm update -r -i --latest`     |

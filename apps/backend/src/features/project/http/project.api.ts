@@ -1,20 +1,13 @@
-import { HttpApiEndpoint, HttpApiGroup } from "@effect/platform"
-import { Schema } from "effect"
-import { Todo } from "../../todo/schema/todo.model.js"
-import { ProjectNotFound } from "../schema/project.errors.js"
-import {
-  CreateProject,
-  Project,
-  ProjectId,
-  UpdateProject,
-} from "../schema/project.model.js"
+import { HttpApiEndpoint, HttpApiGroup } from "@effect/platform";
+import { Schema } from "effect";
+import { Todo } from "../../todo/schema/todo.model.js";
+import { ProjectNotFound } from "../schema/project.errors.js";
+import { CreateProject, Project, ProjectId, UpdateProject } from "../schema/project.model.js";
 
-const IdParam = Schema.Struct({ id: ProjectId })
+const IdParam = Schema.Struct({ id: ProjectId });
 
 export class ProjectApi extends HttpApiGroup.make("project")
-  .add(
-    HttpApiEndpoint.get("list", "/projects").addSuccess(Schema.Array(Project)),
-  )
+  .add(HttpApiEndpoint.get("list", "/projects").addSuccess(Schema.Array(Project)))
   .add(
     HttpApiEndpoint.get("get", "/projects/:id")
       .setPath(IdParam)

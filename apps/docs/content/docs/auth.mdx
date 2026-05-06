@@ -50,7 +50,7 @@ to the originally-requested path.
 ### Server component reads the session
 
 ```tsx
-const { user, accessToken } = await withAuth({ ensureSignedIn: true })
+const { user, accessToken } = await withAuth({ ensureSignedIn: true });
 ```
 
 AuthKit unseals the cookie, refreshes the access token if it's near expiry,
@@ -65,7 +65,7 @@ and returns a typed `user` plus a short-lived JWT.
 ```tsx
 fetch(`${BACKEND_URL}/admin/me`, {
   headers: { Authorization: `Bearer ${accessToken}` },
-})
+});
 ```
 
 </Step>
@@ -77,11 +77,9 @@ fetch(`${BACKEND_URL}/admin/me`, {
 `apps/backend/src/middleware/admin.ts` reads the header. Using `jose`:
 
 ```ts
-const jwks = createRemoteJWKSet(
-  new URL(`https://api.workos.com/sso/jwks/${WORKOS_CLIENT_ID}`),
-)
-const { payload } = await jwtVerify(token, jwks)
-c.set("user", payload)
+const jwks = createRemoteJWKSet(new URL(`https://api.workos.com/sso/jwks/${WORKOS_CLIENT_ID}`));
+const { payload } = await jwtVerify(token, jwks);
+c.set("user", payload);
 ```
 
 Cached after the first call. No round-trip to WorkOS per request.
@@ -92,13 +90,13 @@ Cached after the first call. No round-trip to WorkOS per request.
 
 ## What lives where
 
-| Concern | Owner | File |
-|---|---|---|
-| Session cookie | Admin | sealed via `iron-session` in `handleAuth()` |
-| Access token issuance | WorkOS | code exchange at `/sso/token` |
+| Concern                   | Owner   | File                                              |
+| ------------------------- | ------- | ------------------------------------------------- |
+| Session cookie            | Admin   | sealed via `iron-session` in `handleAuth()`       |
+| Access token issuance     | WorkOS  | code exchange at `/sso/token`                     |
 | Access token verification | Backend | `verifyWorkOSAccessToken` in `lib/auth/workos.ts` |
-| Per-request user object | Admin | `withAuth({ ensureSignedIn: true })` |
-| Per-request user object | Backend | `c.get("user")` after `adminMiddleware` |
+| Per-request user object   | Admin   | `withAuth({ ensureSignedIn: true })`              |
+| Per-request user object   | Backend | `c.get("user")` after `adminMiddleware`           |
 
 ## The two clients
 
@@ -112,10 +110,9 @@ The two `WORKOS_CLIENT_ID` values must match. That's the load-bearing
 piece — if they drift, every request to `/admin/me` returns 401.
 
 <Callout type="info">
-  WorkOS access tokens are short-lived (~5 min). AuthKit's session cookie
-  carries a longer-lived refresh token and exchanges it transparently when
-  `withAuth()` is called. You don't have to think about token expiry in
-  the admin code.
+  WorkOS access tokens are short-lived (~5 min). AuthKit's session cookie carries a longer-lived
+  refresh token and exchanges it transparently when `withAuth()` is called. You don't have to think
+  about token expiry in the admin code.
 </Callout>
 
 ## Adding a new protected route
@@ -123,14 +120,12 @@ piece — if they drift, every request to `/admin/me` returns 401.
 **Backend** — apply `adminMiddleware` to a sub-app or per-route:
 
 ```ts
-new Hono()
-  .use("*", adminMiddleware)
-  .get("/me", (c) => c.json(c.get("user")))
+new Hono().use("*", adminMiddleware).get("/me", (c) => c.json(c.get("user")));
 ```
 
 **Admin** — already protected by `middleware.ts`. Just call `withAuth()` and
 use `accessToken`:
 
 ```tsx
-const { accessToken } = await withAuth({ ensureSignedIn: true })
+const { accessToken } = await withAuth({ ensureSignedIn: true });
 ```

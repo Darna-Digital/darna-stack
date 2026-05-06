@@ -9,36 +9,34 @@
     "traces": {
       "enabled": true,
       "destinations": ["grafana-traces"],
-      "head_sampling_rate": 1
+      "head_sampling_rate": 1,
     },
     "logs": {
       "enabled": true,
       "destinations": ["grafana-logs"],
-      "head_sampling_rate": 1
-    }
+      "head_sampling_rate": 1,
+    },
   },
-  "routes": [
-    { "pattern": "darna-stack-backend.darnadigital.com", "custom_domain": true }
-  ],
+  "routes": [{ "pattern": "darna-stack-backend.darnadigital.com", "custom_domain": true }],
   "env": {
     "staging": {
       "name": "darna-backend-staging",
       "routes": [
-        { "pattern": "staging-darna-stack-backend.darnadigital.com", "custom_domain": true }
+        { "pattern": "staging-darna-stack-backend.darnadigital.com", "custom_domain": true },
       ],
       "observability": {
         "enabled": true,
         "traces": {
           "enabled": true,
           "destinations": ["grafana-traces"],
-          "head_sampling_rate": 1
+          "head_sampling_rate": 1,
         },
         "logs": {
           "enabled": true,
           "destinations": ["grafana-logs"],
-          "head_sampling_rate": 1
-        }
-      }
-    }
-  }
+          "head_sampling_rate": 1,
+        },
+      },
+    },
+  },
 }

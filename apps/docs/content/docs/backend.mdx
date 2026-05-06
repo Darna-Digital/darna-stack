@@ -30,13 +30,13 @@ apps/backend/src/
 
 ## Routes
 
-| Path | Auth | Notes |
-|---|---|---|
-| `GET /health` | — | Liveness check |
-| `GET /openapi` | — | OpenAPI 3.1 spec, generated from route metadata |
-| `GET /docs` | — | Scalar API reference UI, points at `/openapi` |
-| `GET /todos`, `POST /todos`, … | — | Demo CRUD against an in-memory repo |
-| `GET /admin/me` | Bearer | Returns the verified WorkOS user |
+| Path                           | Auth   | Notes                                           |
+| ------------------------------ | ------ | ----------------------------------------------- |
+| `GET /health`                  | —      | Liveness check                                  |
+| `GET /openapi`                 | —      | OpenAPI 3.1 spec, generated from route metadata |
+| `GET /docs`                    | —      | Scalar API reference UI, points at `/openapi`   |
+| `GET /todos`, `POST /todos`, … | —      | Demo CRUD against an in-memory repo             |
+| `GET /admin/me`                | Bearer | Returns the verified WorkOS user                |
 
 ## Effect
 
@@ -48,11 +48,11 @@ methods directly on the class:
 export class Todos extends Effect.Service<Todos>()("Todos", {
   accessors: true,
   effect: Effect.gen(function* () {
-    const repo = yield* TodoRepository
+    const repo = yield* TodoRepository;
     return {
       list: () => repo.list().pipe(Effect.withSpan("Todos.list")),
       // …
-    }
+    };
   }),
 }) {}
 ```
@@ -61,8 +61,8 @@ A single `ManagedRuntime` provides every service:
 
 ```ts
 // src/lib/effect/runtime.ts
-const AppLayer = Layer.mergeAll(TodosLive)
-export const AppRuntime = ManagedRuntime.make(AppLayer)
+const AppLayer = Layer.mergeAll(TodosLive);
+export const AppRuntime = ManagedRuntime.make(AppLayer);
 ```
 
 Hono handlers call `runRoute` to execute an Effect against `AppRuntime`:
@@ -106,9 +106,13 @@ against the WorkOS JWKS for `WORKOS_CLIENT_ID`, and stashes the payload as
 
 ```ts
 // src/features/admin/admin.routes.ts
-export const adminRoutes = new Hono()
-  .use("*", adminMiddleware)
-  .get("/me", describeRoute({ /* … */ }), (c) => c.json(c.get("user")))
+export const adminRoutes = new Hono().use("*", adminMiddleware).get(
+  "/me",
+  describeRoute({
+    /* … */
+  }),
+  (c) => c.json(c.get("user")),
+);
 ```
 
 JWKS is fetched lazily on first verification, so module load works on Workers

@@ -6,20 +6,16 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
     "directory": ".open-next/assets",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
   },
   "observability": {
-    "enabled": true
+    "enabled": true,
   },
-  "routes": [
-    { "pattern": "darna-stack.darnadigital.com", "custom_domain": true }
-  ],
+  "routes": [{ "pattern": "darna-stack.darnadigital.com", "custom_domain": true }],
   "env": {
     "staging": {
       "name": "darna-docs-staging",
-      "routes": [
-        { "pattern": "staging-darna-stack.darnadigital.com", "custom_domain": true }
-      ]
-    }
-  }
+      "routes": [{ "pattern": "staging-darna-stack.darnadigital.com", "custom_domain": true }],
+    },
+  },
 }

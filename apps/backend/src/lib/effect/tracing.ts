@@ -1,11 +1,6 @@
-import {
-  OtlpSerialization,
-  OtlpTracer,
-  Resource,
-  Tracer,
-} from "@effect/opentelemetry"
-import { FetchHttpClient } from "@effect/platform"
-import { Layer } from "effect"
+import { OtlpSerialization, OtlpTracer, Resource, Tracer } from "@effect/opentelemetry";
+import { FetchHttpClient } from "@effect/platform";
+import { Layer } from "effect";
 
 // Two-mode tracing:
 //
@@ -23,9 +18,9 @@ import { Layer } from "effect"
 //
 // Either way Effect.withSpan calls land in the same Grafana stack — the only
 // difference is who does the HTTP push.
-const endpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT
-const authHeader = process.env.GRAFANA_OTEL_AUTH_HEADER
-const deploymentEnv = process.env.OTEL_DEPLOYMENT_ENV ?? "local"
+const endpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+const authHeader = process.env.GRAFANA_OTEL_AUTH_HEADER;
+const deploymentEnv = process.env.OTEL_DEPLOYMENT_ENV ?? "local";
 
 const resourceConfig = {
   serviceName: "darna-backend",
@@ -33,16 +28,14 @@ const resourceConfig = {
   attributes: {
     "deployment.environment": deploymentEnv,
   } as Record<string, string>,
-}
+};
 
 if (endpoint && authHeader) {
-  console.log(
-    `[tracing] OTLP direct push → ${endpoint} (env=${deploymentEnv})`,
-  )
+  console.log(`[tracing] OTLP direct push → ${endpoint} (env=${deploymentEnv})`);
 } else {
   console.log(
     `[tracing] global tracer — Cloudflare Observability handles export (env=${deploymentEnv})`,
-  )
+  );
 }
 
 export const TracingLayer: Layer.Layer<never> =
@@ -51,11 +44,8 @@ export const TracingLayer: Layer.Layer<never> =
         url: `${endpoint.replace(/\/$/, "")}/v1/traces`,
         headers: { Authorization: authHeader },
         resource: resourceConfig,
-      }).pipe(
-        Layer.provide(OtlpSerialization.layerJson),
-        Layer.provide(FetchHttpClient.layer),
-      )
+      }).pipe(Layer.provide(OtlpSerialization.layerJson), Layer.provide(FetchHttpClient.layer))
     : Tracer.layerWithoutOtelTracer.pipe(
         Layer.provide(Tracer.layerGlobalTracer),
         Layer.provide(Resource.layer(resourceConfig)),
-      )
+      );

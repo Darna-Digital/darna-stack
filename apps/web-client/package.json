@@ -25,6 +25,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@darna/lint": "workspace:*",
     "@opennextjs/cloudflare": "^1.19.6",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",

@@ -7,13 +7,13 @@ Backend handlers are Effect programs. Every span you create with `Effect.withSpa
 
 ## TL;DR
 
-| | |
-|---|---|
-| Library | [`@effect/opentelemetry`](https://www.npmjs.com/package/@effect/opentelemetry) (`OtlpTracer`, `OtlpSerialization`) |
-| HTTP client | `@effect/platform`'s `FetchHttpClient` (Workers-compatible) |
-| Destination | Grafana Cloud OTLP gateway → Tempo |
-| Auth | Basic, single precomputed header |
-| Wired in | `ServicesLayer` ([`apps/backend/src/lib/effect/runtime.ts`](https://github.com/darnadigital/darna-stack/blob/master/apps/backend/src/lib/effect/runtime.ts)) → `ApiLive` in [`server.ts`](https://github.com/darnadigital/darna-stack/blob/master/apps/backend/src/server.ts) |
+|             |                                                                                                                                                                                                                                                                               |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Library     | [`@effect/opentelemetry`](https://www.npmjs.com/package/@effect/opentelemetry) (`OtlpTracer`, `OtlpSerialization`)                                                                                                                                                            |
+| HTTP client | `@effect/platform`'s `FetchHttpClient` (Workers-compatible)                                                                                                                                                                                                                   |
+| Destination | Grafana Cloud OTLP gateway → Tempo                                                                                                                                                                                                                                            |
+| Auth        | Basic, single precomputed header                                                                                                                                                                                                                                              |
+| Wired in    | `ServicesLayer` ([`apps/backend/src/lib/effect/runtime.ts`](https://github.com/darnadigital/darna-stack/blob/master/apps/backend/src/lib/effect/runtime.ts)) → `ApiLive` in [`server.ts`](https://github.com/darnadigital/darna-stack/blob/master/apps/backend/src/server.ts) |
 
 ## Architecture
 
@@ -78,11 +78,11 @@ sequenceDiagram
 
 Both come straight from the Grafana Cloud OTLP integration page (Connections → Add new connection → OpenTelemetry):
 
-| Var | Where it lives in CI | Example value |
-|---|---|---|
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | GH Environment **var** | `https://otlp-gateway-prod-eu-north-0.grafana.net/otlp` |
-| `GRAFANA_OTEL_AUTH_HEADER` | GH Environment **secret** | `Basic <long base64>` |
-| `OTEL_DEPLOYMENT_ENV` | GH Environment **var** | `production` / `staging` / `local` |
+| Var                           | Where it lives in CI      | Example value                                           |
+| ----------------------------- | ------------------------- | ------------------------------------------------------- |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | GH Environment **var**    | `https://otlp-gateway-prod-eu-north-0.grafana.net/otlp` |
+| `GRAFANA_OTEL_AUTH_HEADER`    | GH Environment **secret** | `Basic <long base64>`                                   |
+| `OTEL_DEPLOYMENT_ENV`         | GH Environment **var**    | `production` / `staging` / `local`                      |
 
 Any of these missing → `TracingLayer` becomes `Layer.empty`, so `Effect.withSpan` calls keep working but go nowhere. The boot log says which mode you're in:
 
@@ -117,16 +117,13 @@ Set per-environment under repo → Settings → Environments → `production` / 
 ### Inside an Effect program
 
 ```ts
-const list = (): Effect.Effect<readonly Todo[]> =>
-  repo.list().pipe(Effect.withSpan("Todos.list"))
+const list = (): Effect.Effect<readonly Todo[]> => repo.list().pipe(Effect.withSpan("Todos.list"));
 
 const getById = (id: TodoId): Effect.Effect<Todo, TodoNotFound> =>
   repo.findById(id).pipe(
-    Effect.flatMap((t) =>
-      t ? Effect.succeed(t) : Effect.fail(new TodoNotFound({ id })),
-    ),
+    Effect.flatMap((t) => (t ? Effect.succeed(t) : Effect.fail(new TodoNotFound({ id })))),
     Effect.withSpan("Todos.getById", { attributes: { "todo.id": id } }),
-  )
+  );
 ```
 
 Span name shows in Tempo verbatim. Attributes become queryable via TraceQL (`{ name="Todos.getById" && span.todo.id="…" }`).
@@ -136,10 +133,11 @@ Span name shows in Tempo verbatim. Attributes become queryable via TraceQL (`{ n
 Wrap any I/O in a span — DB queries, fetches, JWT verification — so its latency shows up in the flamegraph:
 
 ```ts
-yield* Effect.tryPromise({
-  try: () => fetch(url),
-  catch: (cause) => new IntegrationError({ cause }),
-}).pipe(Effect.withSpan("workos.jwks.fetch"))
+yield *
+  Effect.tryPromise({
+    try: () => fetch(url),
+    catch: (cause) => new IntegrationError({ cause }),
+  }).pipe(Effect.withSpan("workos.jwks.fetch"));
 ```
 
 ### HttpApi auto-spans
@@ -185,13 +183,13 @@ If spans aren't landing, isolate the credentials with a hand-rolled OTLP POST:
 
 Expected:
 
-| Response | Meaning |
-|---|---|
-| `200` / `202` | Auth + URL good. Issue is on our pipeline side. |
-| `401` | Wrong auth header. Re-grab from Grafana. |
-| `403` | Token missing `traces:write`. Recreate via Cloud Access Policies. |
-| `404` | Endpoint URL wrong (most often a region typo: `prod-eu-north-0` vs `prod-eu-west-2`). |
-| `ENOTFOUND` | Hostname typo in `OTEL_EXPORTER_OTLP_ENDPOINT`. |
+| Response      | Meaning                                                                               |
+| ------------- | ------------------------------------------------------------------------------------- |
+| `200` / `202` | Auth + URL good. Issue is on our pipeline side.                                       |
+| `401`         | Wrong auth header. Re-grab from Grafana.                                              |
+| `403`         | Token missing `traces:write`. Recreate via Cloud Access Policies.                     |
+| `404`         | Endpoint URL wrong (most often a region typo: `prod-eu-north-0` vs `prod-eu-west-2`). |
+| `ENOTFOUND`   | Hostname typo in `OTEL_EXPORTER_OTLP_ENDPOINT`.                                       |
 
 ### View in Grafana
 
@@ -239,7 +237,7 @@ OtlpTracer.layer({
   url: "...",
   exportInterval: Duration.seconds(1),
   // ...
-})
+});
 ```
 
 ### What's not exported (yet)
@@ -248,10 +246,10 @@ Only `OtlpTracer` is wired up. `@effect/opentelemetry` also ships `OtlpMetric` a
 
 ## Files
 
-| Path | Role |
-|---|---|
-| `apps/backend/src/lib/effect/tracing.ts` | Builds `TracingLayer`, reads env, prints boot status |
-| `apps/backend/src/lib/effect/runtime.ts` | `ServicesLayer = Layer.mergeAll(TracingLayer, …)` |
-| `apps/backend/src/server.ts` | `Layer.provide(ServicesLayer)` to `ApiLive` |
-| `apps/backend/.dev.vars.example` | Template for local env vars |
-| `.github/workflows/deploy.yml` | `--var` for endpoint/env, `wrangler secret put` for auth header |
+| Path                                     | Role                                                            |
+| ---------------------------------------- | --------------------------------------------------------------- |
+| `apps/backend/src/lib/effect/tracing.ts` | Builds `TracingLayer`, reads env, prints boot status            |
+| `apps/backend/src/lib/effect/runtime.ts` | `ServicesLayer = Layer.mergeAll(TracingLayer, …)`               |
+| `apps/backend/src/server.ts`             | `Layer.provide(ServicesLayer)` to `ApiLive`                     |
+| `apps/backend/.dev.vars.example`         | Template for local env vars                                     |
+| `.github/workflows/deploy.yml`           | `--var` for endpoint/env, `wrangler secret put` for auth header |

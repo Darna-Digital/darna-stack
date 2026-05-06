@@ -1,6 +1,6 @@
-import path from 'node:path';
-import { createMDX } from 'fumadocs-mdx/next';
-import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
+import path from "node:path";
+import { createMDX } from "fumadocs-mdx/next";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
 initOpenNextCloudflareForDev();
 
@@ -12,7 +12,7 @@ const config = {
   // Pin workspace root to the monorepo root so Turbopack can resolve `next`
   // through pnpm's symlinks in `node_modules/.pnpm`.
   turbopack: {
-    root: path.resolve(import.meta.dirname, '../..'),
+    root: path.resolve(import.meta.dirname, "../.."),
   },
 };
 

@@ -1,16 +1,16 @@
-import { Effect } from "effect"
-import { eq } from "drizzle-orm"
-import { db } from "../../../lib/db/client.js"
-import { projects } from "../../../lib/db/schema.js"
-import { tryDb } from "../../../lib/effect/storage.js"
-import type { ProjectRepo } from "./project.repository.js"
-import type { Project, ProjectId } from "../schema/project.model.js"
+import { Effect } from "effect";
+import { eq } from "drizzle-orm";
+import { db } from "../../../lib/db/client.js";
+import { projects } from "../../../lib/db/schema.js";
+import { tryDb } from "../../../lib/effect/storage.js";
+import type { ProjectRepo } from "./project.repository.js";
+import type { Project, ProjectId } from "../schema/project.model.js";
 
 const rowToProject = (row: typeof projects.$inferSelect): Project => ({
   id: row.id as ProjectId,
   name: row.name,
   createdAt: row.createdAt,
-})
+});
 
 export const createDbProjectRepo: ProjectRepo = {
   list: () =>
@@ -21,9 +21,7 @@ export const createDbProjectRepo: ProjectRepo = {
   findById: (id) =>
     tryDb("pg.projects.findById", () =>
       db.select().from(projects).where(eq(projects.id, id)).limit(1),
-    ).pipe(
-      Effect.map((rows) => (rows[0] ? rowToProject(rows[0]) : undefined)),
-    ),
+    ).pipe(Effect.map((rows) => (rows[0] ? rowToProject(rows[0]) : undefined))),
 
   create: (input) =>
     Effect.gen(function* () {
@@ -31,11 +29,9 @@ export const createDbProjectRepo: ProjectRepo = {
         id: crypto.randomUUID() as ProjectId,
         name: input.name,
         createdAt: new Date().toISOString(),
-      }
-      yield* tryDb("pg.projects.insert", () =>
-        db.insert(projects).values(project),
-      )
-      return project
+      };
+      yield* tryDb("pg.projects.insert", () => db.insert(projects).values(project));
+      return project;
     }),
 
   update: (id, patch) =>
@@ -47,9 +43,7 @@ export const createDbProjectRepo: ProjectRepo = {
         })
         .where(eq(projects.id, id))
         .returning(),
-    ).pipe(
-      Effect.map((rows) => (rows[0] ? rowToProject(rows[0]) : undefined)),
-    ),
+    ).pipe(Effect.map((rows) => (rows[0] ? rowToProject(rows[0]) : undefined))),
 
   remove: (id) =>
     tryDb("pg.projects.delete", () =>
@@ -57,4 +51,4 @@ export const createDbProjectRepo: ProjectRepo = {
         id: projects.id,
       }),
     ).pipe(Effect.map((rows) => rows.length > 0)),
-}
+};

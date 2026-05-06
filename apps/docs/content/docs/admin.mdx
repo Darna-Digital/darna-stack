@@ -8,13 +8,12 @@ landing page reads the signed-in user, hits `/admin/me` on the backend with
 the access token, and shows whether `adminMiddleware` accepted it.
 
 <Callout type="warn">
-  We use `middleware.ts` (deprecated in Next 16) rather than the new
-  `proxy.ts`. Reason: Next 16 hard-codes `proxy.ts` to the Node runtime and
-  forbids the `runtime` config. OpenNext for Cloudflare only hosts Edge
-  middleware. The deprecated `middleware.ts` filename still works in Next 16
-  *and* lets us opt into Edge via `runtime: "experimental-edge"`. Two warnings
-  appear at build time (deprecated filename, experimental runtime); both are
-  expected. Revisit when OpenNext supports Node middleware.
+  We use `middleware.ts` (deprecated in Next 16) rather than the new `proxy.ts`. Reason: Next 16
+  hard-codes `proxy.ts` to the Node runtime and forbids the `runtime` config. OpenNext for
+  Cloudflare only hosts Edge middleware. The deprecated `middleware.ts` filename still works in Next
+  16 *and* lets us opt into Edge via `runtime: "experimental-edge"`. Two warnings appear at build
+  time (deprecated filename, experimental runtime); both are expected. Revisit when OpenNext
+  supports Node middleware.
 </Callout>
 
 ## Layout
@@ -35,16 +34,16 @@ asset. Unauthenticated requests get 307'd to the WorkOS-hosted sign-in page.
 
 ```ts
 // src/middleware.ts
-import { authkitMiddleware } from "@workos-inc/authkit-nextjs"
+import { authkitMiddleware } from "@workos-inc/authkit-nextjs";
 
 export default authkitMiddleware({
   middlewareAuth: { enabled: true, unauthenticatedPaths: [] },
-})
+});
 
 export const config = {
   runtime: "experimental-edge",
   matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
-}
+};
 ```
 
 After the user signs in, WorkOS redirects to `/callback?code=…`, which is
@@ -60,9 +59,9 @@ session into a cookie via `iron-session`, and redirects to the original path.
 In any server component:
 
 ```tsx
-import { withAuth } from "@workos-inc/authkit-nextjs"
+import { withAuth } from "@workos-inc/authkit-nextjs";
 
-const { user, accessToken } = await withAuth({ ensureSignedIn: true })
+const { user, accessToken } = await withAuth({ ensureSignedIn: true });
 ```
 
 `accessToken` is a short-lived WorkOS JWT, refreshed transparently by
@@ -75,11 +74,11 @@ The landing page does the round-trip on every render:
 
 ```tsx
 // src/app/page.tsx
-const { user, accessToken } = await withAuth({ ensureSignedIn: true })
+const { user, accessToken } = await withAuth({ ensureSignedIn: true });
 const res = await fetch(`${BACKEND_URL}/admin/me`, {
   headers: { Authorization: `Bearer ${accessToken}` },
   cache: "no-store",
-})
+});
 ```
 
 A green pill with the status code means `adminMiddleware` accepted the token.
@@ -106,7 +105,12 @@ token, the backend verifies it.
 A server action on the landing page:
 
 ```tsx
-<form action={async () => { "use server"; await signOut() }}>
+<form
+  action={async () => {
+    "use server";
+    await signOut();
+  }}
+>
   <button type="submit">Sign out</button>
 </form>
 ```

@@ -1,27 +1,20 @@
-import { Effect, Ref } from "effect"
-import type { TodoRepo } from "./todo.repository.js"
-import type { Todo, TodoId } from "../schema/todo.model.js"
+import { Effect, Ref } from "effect";
+import type { TodoRepo } from "./todo.repository.js";
+import type { Todo, TodoId } from "../schema/todo.model.js";
 
-export const createMemoryTodoRepo = (
-  seed: readonly Todo[] = [],
-): Effect.Effect<TodoRepo> =>
+export const createMemoryTodoRepo = (seed: readonly Todo[] = []): Effect.Effect<TodoRepo> =>
   Effect.gen(function* () {
-    const ref = yield* Ref.make<Map<TodoId, Todo>>(
-      new Map(seed.map((t) => [t.id, t])),
-    )
+    const ref = yield* Ref.make<Map<TodoId, Todo>>(new Map(seed.map((t) => [t.id, t])));
 
     const list: TodoRepo["list"] = () =>
-      Ref.get(ref).pipe(Effect.map((m) => Array.from(m.values())))
+      Ref.get(ref).pipe(Effect.map((m) => Array.from(m.values())));
 
     const listByProject: TodoRepo["listByProject"] = (projectId) =>
       Ref.get(ref).pipe(
-        Effect.map((m) =>
-          Array.from(m.values()).filter((t) => t.projectId === projectId),
-        ),
-      )
+        Effect.map((m) => Array.from(m.values()).filter((t) => t.projectId === projectId)),
+      );
 
-    const findById: TodoRepo["findById"] = (id) =>
-      Ref.get(ref).pipe(Effect.map((m) => m.get(id)))
+    const findById: TodoRepo["findById"] = (id) => Ref.get(ref).pipe(Effect.map((m) => m.get(id)));
 
     const create: TodoRepo["create"] = (input) =>
       Effect.sync(() => crypto.randomUUID()).pipe(
@@ -32,36 +25,32 @@ export const createMemoryTodoRepo = (
             done: false,
             createdAt: new Date().toISOString(),
             projectId: input.projectId ?? null,
-          }
-          return Ref.update(ref, (m) => new Map(m).set(todo.id, todo)).pipe(
-            Effect.as(todo),
-          )
+          };
+          return Ref.update(ref, (m) => new Map(m).set(todo.id, todo)).pipe(Effect.as(todo));
         }),
-      )
+      );
 
     const update: TodoRepo["update"] = (id, patch) =>
       Ref.modify(ref, (m) => {
-        const existing = m.get(id)
-        if (!existing) return [undefined, m] as const
+        const existing = m.get(id);
+        if (!existing) return [undefined, m] as const;
         const next: Todo = {
           ...existing,
           ...(patch.title !== undefined ? { title: patch.title } : {}),
           ...(patch.done !== undefined ? { done: patch.done } : {}),
-          ...(patch.projectId !== undefined
-            ? { projectId: patch.projectId }
-            : {}),
-        }
-        const nextMap = new Map(m).set(id, next)
-        return [next, nextMap] as const
-      })
+          ...(patch.projectId !== undefined ? { projectId: patch.projectId } : {}),
+        };
+        const nextMap = new Map(m).set(id, next);
+        return [next, nextMap] as const;
+      });
 
     const remove: TodoRepo["remove"] = (id) =>
       Ref.modify(ref, (m) => {
-        if (!m.has(id)) return [false, m] as const
-        const nextMap = new Map(m)
-        nextMap.delete(id)
-        return [true, nextMap] as const
-      })
+        if (!m.has(id)) return [false, m] as const;
+        const nextMap = new Map(m);
+        nextMap.delete(id);
+        return [true, nextMap] as const;
+      });
 
-    return { list, listByProject, findById, create, update, remove }
-  })
+    return { list, listByProject, findById, create, update, remove };
+  });

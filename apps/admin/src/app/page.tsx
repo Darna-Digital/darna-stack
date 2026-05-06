@@ -5,8 +5,7 @@ const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:4000";
 async function pingAdminMe(
   accessToken: string,
 ): Promise<
-  | { ok: true; status: number; body: unknown }
-  | { ok: false; status: number; body: string }
+  { ok: true; status: number; body: unknown } | { ok: false; status: number; body: string }
 > {
   try {
     const res = await fetch(`${BACKEND_URL}/admin/me`, {
@@ -74,9 +73,7 @@ export default async function Home() {
       <div className="w-full max-w-md flex flex-col gap-3 rounded-2xl border border-black/[.08] dark:border-white/[.145] bg-white dark:bg-zinc-950 p-8 shadow-sm">
         <header className="flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-base font-semibold tracking-tight">
-              Backend · GET /admin/me
-            </h2>
+            <h2 className="text-base font-semibold tracking-tight">Backend · GET /admin/me</h2>
             <p className="text-xs text-zinc-500 break-all">{BACKEND_URL}</p>
           </div>
           <span
@@ -98,9 +95,7 @@ export default async function Home() {
         </p>
 
         <pre className="overflow-auto rounded-lg bg-zinc-100 dark:bg-zinc-900 p-3 text-xs leading-relaxed">
-          {typeof ping.body === "string"
-            ? ping.body
-            : JSON.stringify(ping.body, null, 2)}
+          {typeof ping.body === "string" ? ping.body : JSON.stringify(ping.body, null, 2)}
         </pre>
       </div>
     </main>

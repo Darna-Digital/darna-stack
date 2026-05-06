@@ -1,0 +1,15 @@
+**/node_modules
+**/.next
+**/.open-next
+**/.wrangler
+**/.turbo
+**/.cache
+**/dist
+**/build
+**/coverage
+**/.vercel
+**/pnpm-lock.yaml
+**/*.min.*
+**/cloudflare-env.d.ts
+apps/web-client/lib/api-schema.d.ts
+apps/docs/.source

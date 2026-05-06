@@ -8,11 +8,11 @@ paths relative to that file — the monorepo root doesn't get involved.
 
 ## Targets
 
-| App | Adapter | Entry |
-|---|---|---|
-| `@darna/backend` | native (Hono is fetch-native) | `src/worker.ts` |
-| `@darna/admin`   | `@opennextjs/cloudflare` | `.open-next/worker.js` |
-| `@darna/docs`    | `@opennextjs/cloudflare` | `.open-next/worker.js` |
+| App              | Adapter                       | Entry                  |
+| ---------------- | ----------------------------- | ---------------------- |
+| `@darna/backend` | native (Hono is fetch-native) | `src/worker.ts`        |
+| `@darna/admin`   | `@opennextjs/cloudflare`      | `.open-next/worker.js` |
+| `@darna/docs`    | `@opennextjs/cloudflare`      | `.open-next/worker.js` |
 
 Pages was deprecated for new Next.js deployments. OpenNext compiles a
 Next.js app into a single Worker plus a static-asset binding.
@@ -52,13 +52,13 @@ Fix: pin `turbopack.root` to the monorepo root in each Next.js app.
 
 ```ts
 // apps/admin/next.config.ts
-import path from "node:path"
+import path from "node:path";
 
 const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(process.cwd(), "../.."),
   },
-}
+};
 ```
 
 ```js
@@ -67,14 +67,13 @@ const config = {
   turbopack: {
     root: path.resolve(import.meta.dirname, "../.."),
   },
-}
+};
 ```
 
 <Callout type="warn">
-  Don't use `import.meta.dirname` in `next.config.ts`. Next compiles `.ts`
-  configs to CommonJS, but referencing `import.meta` forces ESM output and
-  the compiled file then collides with `exports`. `process.cwd()` works in
-  TS configs; `import.meta.dirname` works in `.mjs`.
+  Don't use `import.meta.dirname` in `next.config.ts`. Next compiles `.ts` configs to CommonJS, but
+  referencing `import.meta` forces ESM output and the compiled file then collides with `exports`.
+  `process.cwd()` works in TS configs; `import.meta.dirname` works in `.mjs`.
 </Callout>
 
 The other foot-gun is stray per-app `pnpm-lock.yaml` files. `create-next-app`

@@ -12,6 +12,8 @@
     "build": "pnpm -r run build",
     "lint": "pnpm -r run lint",
     "typecheck": "pnpm -r run typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "deploy": "pnpm --filter @darna/backend run deploy && pnpm --filter @darna/admin run deploy && pnpm --filter @darna/docs run deploy && pnpm --filter web-client run deploy",
     "deploy:backend": "pnpm --filter @darna/backend run deploy",
     "deploy:admin": "pnpm --filter @darna/admin run deploy",
@@ -23,5 +25,9 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "devDependencies": {
+    "@darna/lint": "workspace:*",
+    "prettier": "^3.6.2"
   }
 }
