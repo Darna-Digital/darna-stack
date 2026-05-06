@@ -22,7 +22,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "deploy": "wrangler deploy",
-    "cf-typegen": "wrangler types"
+    "cf-typegen": "wrangler types",
+    "db:generate": "drizzle-kit generate",
+    "db:check": "drizzle-kit check",
+    "db:migrate": "tsx --env-file-if-exists=.env scripts/migrate.ts",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@effect/opentelemetry": "^0.63.0",
@@ -38,13 +43,18 @@
     "@opentelemetry/sdk-trace-web": "^2.7.1",
     "@opentelemetry/semantic-conventions": "^1.40.0",
     "@scalar/hono-api-reference": "^0.10.13",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
     "effect": "^3.21.2",
     "hono": "^4.12.16",
-    "jose": "^6.2.3"
+    "jose": "^6.2.3",
+    "pg": "^8.20.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260504.1",
     "@types/node": "^25.6.0",
+    "@types/pg": "^8.20.0",
+    "drizzle-kit": "^0.31.10",
     "tsx": "^4.7.1",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5",

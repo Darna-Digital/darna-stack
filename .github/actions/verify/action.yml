@@ -21,3 +21,19 @@ runs:
 
     - shell: bash
       run: pnpm --filter @darna/backend test
+
+    - name: Verify backend migrations match schema
+      shell: bash
+      env:
+        # drizzle-kit's config requires DATABASE_URL to be set even for
+        # generate/check, which don't actually connect.
+        DATABASE_URL: postgres://placeholder:placeholder@localhost:5432/placeholder
+      run: |
+        pnpm --filter @darna/backend run db:check
+        pnpm --filter @darna/backend run db:generate
+        if ! git diff --quiet apps/backend/src/lib/db; then
+          echo "::error::Schema changed without a matching migration. Run 'pnpm --filter @darna/backend run db:generate' locally and commit the result."
+          git status apps/backend/src/lib/db
+          git diff apps/backend/src/lib/db
+          exit 1
+        fi
