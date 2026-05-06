@@ -10,8 +10,7 @@ const dbStore = new AsyncLocalStorage<Db>();
 
 export const runWithDb = <T>(db: Db, fn: () => T): T => dbStore.run(db, fn);
 
-const isWorkers =
-  typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers";
+const isWorkers = typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers";
 
 // Local Node dev keeps a long-lived pool; on Workers, the per-request Client
 // is established in worker.ts and threaded through `runWithDb`.
