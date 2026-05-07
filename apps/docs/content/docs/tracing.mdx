@@ -1,136 +1,125 @@
 ---
 title: Tracing
-description: OpenTelemetry traces from `@darna/backend` to Grafana Cloud Tempo via `@effect/opentelemetry`.
+description: OpenTelemetry traces from the Worker to Grafana Cloud Tempo, via @microlabs/otel-cf-workers and @effect/opentelemetry.
 ---
 
-Backend handlers are Effect programs. Every span you create with `Effect.withSpan(...)` ships to Grafana Cloud over OTLP/HTTP — no collector, no agent, just a layer in the runtime.
-
-## TL;DR
-
-|             |                                                                                                                                                                                                                                                                               |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Library     | [`@effect/opentelemetry`](https://www.npmjs.com/package/@effect/opentelemetry) (`OtlpTracer`, `OtlpSerialization`)                                                                                                                                                            |
-| HTTP client | `@effect/platform`'s `FetchHttpClient` (Workers-compatible)                                                                                                                                                                                                                   |
-| Destination | Grafana Cloud OTLP gateway → Tempo                                                                                                                                                                                                                                            |
-| Auth        | Basic, single precomputed header                                                                                                                                                                                                                                              |
-| Wired in    | `ServicesLayer` ([`apps/backend/src/lib/effect/runtime.ts`](https://github.com/darnadigital/darna-stack/blob/master/apps/backend/src/lib/effect/runtime.ts)) → `ApiLive` in [`server.ts`](https://github.com/darnadigital/darna-stack/blob/master/apps/backend/src/server.ts) |
+The backend ships every Effect span to Grafana Cloud over OTLP/HTTP. No
+collector, no agent. The Worker entrypoint is wrapped with
+`@microlabs/otel-cf-workers`, which registers a real `TracerProvider` per
+request and flushes spans through `ctx.waitUntil` before the isolate
+suspends. Effect's tracer plugs into the same provider, so
+`Effect.withSpan(...)` calls land in the same trace tree as the auto-
+instrumented inbound fetch and Hyperdrive spans.
 
 ## Architecture
 
-### Layer composition
-
-The `Tracer` service is provided to `ApiLive` via `Layer.provide(ServicesLayer)`. Every Effect that runs through HttpApi sees it.
-
 ```mermaid
 flowchart TD
-  toWeb["HttpApiBuilder.toWebHandler"]
-  Api["ApiLive (Layer.provide ServicesLayer)"]
-  Router["HttpApiBuilder.Router.Live"]
-  HttpCtx["HttpServer.layerContext"]
-  Services["ServicesLayer"]
-  Tracing["TracingLayer"]
-  Todos["TodosLive"]
-  Otlp["OtlpTracer.layer"]
-  Fetch["FetchHttpClient.layer"]
-  Json["OtlpSerialization.layerJson"]
+  CF["Cloudflare Worker"]
+  Instr["@microlabs/otel-cf-workers<br/>instrument(handler, config)"]
+  Trace["trace.setGlobalTracerProvider<br/>(per request)"]
+  Eff["Effect tracer<br/>lazy global lookup"]
+  Hono["Hono → HttpApi handler"]
+  Procs["SpanProcessors:<br/>1. propagateRoute<br/>2. BatchTraceSpanProcessor"]
+  Otlp["OTLPExporter<br/>POST /v1/traces"]
+  Tempo["Grafana Cloud Tempo"]
 
-  toWeb --> Api
-  toWeb --> Router
-  toWeb --> HttpCtx
-  Api --> Services
-  Services --> Tracing
-  Services --> Todos
-  Tracing --> Otlp
-  Otlp --> Fetch
-  Otlp --> Json
+  CF --> Instr
+  Instr --> Trace
+  Trace --> Hono
+  Hono --> Eff
+  Eff --> Procs
+  Procs --> Otlp
+  Otlp --> Tempo
 ```
 
-### Request → trace flow
+The two non-obvious pieces:
 
-`Effect.withSpan(name)` inside services and handlers attaches to the current request's trace; `OtlpTracer` batches and exports on a 5-second interval.
+1. **Lazy tracer.** `@effect/opentelemetry`'s `Tracer.layerGlobalTracer`
+   captures the global `TracerProvider` at layer-build time. On Workers
+   that's module load — _before_ `instrument(...)` registers the real
+   provider on the first request. We work around this by providing a
+   tracer that re-resolves `trace.getTracer(...)` on every `startSpan`
+   call. Lives in
+   [`lib/effect/tracing.ts`](https://github.com/darnadigital/darna-stack/blob/master/apps/backend/src/lib/effect/tracing.ts).
+2. **Route-name propagation.** `@microlabs` only renames the root span
+   from `fetchHandler GET` to `GET <route>` if it sees `http.route` on
+   the root. Effect sets `http.route` on its own `http.server` _child_
+   span. A custom `SpanProcessor` in
+   [`worker.ts`](https://github.com/darnadigital/darna-stack/blob/master/apps/backend/src/worker.ts)
+   copies the attribute up to the root before the root ends.
 
-```mermaid
-sequenceDiagram
-  participant C as Client
-  participant W as Worker (HttpApi)
-  participant H as Todo handler
-  participant S as Todos service
-  participant T as OtlpTracer
-  participant G as Grafana OTLP gateway
-  participant Tempo as Tempo
+## What gets exported
 
-  C->>W: GET /todos
-  W->>H: api.todo.list span (auto)
-  H->>S: list()
-  S->>S: Effect.withSpan("Todos.list")
-  S-->>H: Todo[]
-  H-->>W: Todo[]
-  W-->>C: 200 OK
-  Note over T: spans queued, batched
-  T-)G: POST /v1/traces (Basic auth)
-  G->>Tempo: ingest
-  Note over Tempo: queryable in ~5–30s
-```
+| Span                             | Source                                | When it appears                             |
+| -------------------------------- | ------------------------------------- | ------------------------------------------- |
+| `<METHOD> <route>`               | @microlabs root                       | Every request (renamed from `fetchHandler`) |
+| `http.server <METHOD>`           | Effect HttpApi auto                   | Once per request, `http.route` set on it    |
+| `Todos.list`, `Todos.getById`, … | `Effect.withSpan` in services         | Once per service call                       |
+| `pg.todos.list`, …               | `tryDb(name, …)`                      | Once per database query                     |
+| `hyperdrive_connect`             | @microlabs Hyperdrive instrumentation | Connection acquisition                      |
+| `<host>` (CLIENT)                | @microlabs fetch instrumentation      | Outbound `fetch()` subrequests              |
 
-## Setup
+Resource attributes:
 
-### Required env vars
+| Attribute                        | Value                                         |
+| -------------------------------- | --------------------------------------------- |
+| `service.name`                   | `darna-backend`                               |
+| `service.namespace`              | `production` / `staging` / `local` (from env) |
+| `service.version`                | `0.0.0`                                       |
+| `cloud.platform`, `cloud.region` | Auto-populated by @microlabs                  |
 
-Both come straight from the Grafana Cloud OTLP integration page (Connections → Add new connection → OpenTelemetry):
+## Configuration
 
-| Var                           | Where it lives in CI      | Example value                                           |
-| ----------------------------- | ------------------------- | ------------------------------------------------------- |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | GH Environment **var**    | `https://otlp-gateway-prod-eu-north-0.grafana.net/otlp` |
-| `GRAFANA_OTEL_AUTH_HEADER`    | GH Environment **secret** | `Basic <long base64>`                                   |
-| `OTEL_DEPLOYMENT_ENV`         | GH Environment **var**    | `production` / `staging` / `local`                      |
+Two secrets, one var. All come from the Grafana Cloud OTLP integration page
+(Connections → Add new connection → OpenTelemetry):
 
-Any of these missing → `TracingLayer` becomes `Layer.empty`, so `Effect.withSpan` calls keep working but go nowhere. The boot log says which mode you're in:
+| Variable                      | Where                                                       |
+| ----------------------------- | ----------------------------------------------------------- |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `wrangler secret put` (per env)                             |
+| `GRAFANA_OTEL_AUTH_HEADER`    | `wrangler secret put` (per env)                             |
+| `OTEL_DEPLOYMENT_ENV`         | `vars` block in `wrangler.jsonc` (`production` / `staging`) |
 
-```text
-[tracing] OTLP enabled → https://otlp-gateway-prod-eu-north-0.grafana.net/otlp (env=local)
-[tracing] OTLP disabled — missing: GRAFANA_OTEL_AUTH_HEADER
-```
-
-### Local dev
-
-`apps/backend/.env` (gitignored — see `.dev.vars.example` for the template):
+For local dev, all three live in `apps/backend/.env`. Wrangler exposes
+them on the `env` arg via `wrangler dev --env-file=.env`.
 
 ```bash
+# apps/backend/.env
 OTEL_EXPORTER_OTLP_ENDPOINT=https://otlp-gateway-prod-eu-north-0.grafana.net/otlp
 GRAFANA_OTEL_AUTH_HEADER=Basic <paste from Grafana>
 OTEL_DEPLOYMENT_ENV=local
 ```
 
-`process.env` is read at module load, so restart `pnpm --filter @darna/backend dev` after editing.
-
-### CI / Workers
-
-The `deploy-backend` job in [`.github/workflows/deploy.yml`](https://github.com/darnadigital/darna-stack/blob/master/.github/workflows/deploy.yml):
-
-- Passes `OTEL_DEPLOYMENT_ENV` and `OTEL_EXPORTER_OTLP_ENDPOINT` as wrangler `--var` flags from GitHub Environment vars.
-- Pushes `GRAFANA_OTEL_AUTH_HEADER` as a Worker secret via `wrangler secret put` after deploy.
-
-Set per-environment under repo → Settings → Environments → `production` / `staging`.
+The auth header is the full `Basic <base64>` string Grafana shows. Don't
+split it.
 
 ## Adding spans
 
-### Inside an Effect program
+Inside any Effect:
 
 ```ts
 const list = (): Effect.Effect<readonly Todo[]> => repo.list().pipe(Effect.withSpan("Todos.list"));
 
 const getById = (id: TodoId): Effect.Effect<Todo, TodoNotFound> =>
-  repo.findById(id).pipe(
-    Effect.flatMap((t) => (t ? Effect.succeed(t) : Effect.fail(new TodoNotFound({ id })))),
-    Effect.withSpan("Todos.getById", { attributes: { "todo.id": id } }),
+  Effect.gen(function* () {
+    const todo = yield* repo.findById(id);
+    if (!todo) return yield* Effect.fail(new TodoNotFound({ id }));
+    return todo;
+  }).pipe(Effect.withSpan("Todos.getById", { attributes: { "todo.id": id } }));
+```
+
+Around any drizzle query, use `tryDb(name, run)` from
+[`lib/effect/storage.ts`](https://github.com/darnadigital/darna-stack/blob/master/apps/backend/src/lib/effect/storage.ts) — it adds the span automatically and turns
+thrown errors into Effect defects:
+
+```ts
+list: () =>
+  tryDb("pg.todos.list", () => db.select().from(todos)).pipe(
+    Effect.map((rows) => rows.map(rowToTodo)),
   );
 ```
 
-Span name shows in Tempo verbatim. Attributes become queryable via TraceQL (`{ name="Todos.getById" && span.todo.id="…" }`).
-
-### Around external work
-
-Wrap any I/O in a span — DB queries, fetches, JWT verification — so its latency shows up in the flamegraph:
+Around outbound HTTP, just wrap the promise:
 
 ```ts
 yield *
@@ -140,48 +129,50 @@ yield *
   }).pipe(Effect.withSpan("workos.jwks.fetch"));
 ```
 
-### HttpApi auto-spans
+### Naming
 
-`@effect/platform` already wraps each request in a span named after the API endpoint (`api.todo.list`, etc.) — you don't have to instrument routes manually. Inner `withSpan` calls nest under it.
+- `<Service>.<method>` for service operations: `Todos.create`,
+  `WorkOS.verifyAccessToken`.
+- `<dependency>.<resource>.<op>` for I/O: `pg.todos.insert`, `r2.assets.put`.
+- Lowercase, dot-separated, low cardinality.
 
-### Naming convention
+## Querying in Grafana
 
-- `<service>.<method>` for service operations: `Todos.create`, `WorkOS.verifyAccessToken`.
-- `<dependency>.<op>` for I/O: `mysql.todos.insert`, `r2.assets.put`.
-- Lowercase, dot-separated.
-
-## Verifying
-
-### Boot
-
-After restart, the dev terminal prints either:
+Explore → Tempo → TraceQL. Common queries:
 
 ```text
-[tracing] OTLP enabled → <url> (env=<env>)
+# Everything from the prod backend
+{ resource.service.name = "darna-backend" && resource.service.namespace = "production" }
+
+# Just the not-found spans
+{ name = "Todos.getById" && status = error }
+
+# Slow list operations
+{ name = "Todos.list" && duration > 100ms }
+
+# By todo id
+{ span.todo.id = "<uuid>" }
+
+# Effect spans only (skip @microlabs auto-instrumentation)
+{ resource.service.name = "darna-backend" && name !~ "fetchHandler.*" }
 ```
 
-…or:
+The trace list shows the @microlabs root span; click in to see the full
+tree (`http.server` → `Todos.list` → `pg.todos.list`).
 
-```text
-[tracing] OTLP disabled — missing: <list>
-```
+## Verifying the auth credentials
 
-If "disabled", the env var is missing or `tsx watch` was started before the file existed. Stop the watcher and start fresh.
-
-### Auth check (without Effect in the loop)
-
-If spans aren't landing, isolate the credentials with a hand-rolled OTLP POST:
+If spans aren't landing, isolate the credentials with a hand-rolled OTLP
+POST:
 
 ```bash
-( cd apps/backend \
-  && export $(grep -v '^#' .env | grep -E '^(OTEL|GRAFANA)' | xargs) \
-  && curl -i -X POST "${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/traces" \
-       -H "Authorization: ${GRAFANA_OTEL_AUTH_HEADER}" \
-       -H 'content-type: application/json' \
-       -d '{"resourceSpans":[]}' )
+( cd apps/backend && \
+  export $(grep -v '^#' .env | grep -E '^(OTEL|GRAFANA)' | xargs) && \
+  curl -i -X POST "${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/traces" \
+    -H "Authorization: ${GRAFANA_OTEL_AUTH_HEADER}" \
+    -H 'content-type: application/json' \
+    -d '{"resourceSpans":[]}' )
 ```
-
-Expected:
 
 | Response      | Meaning                                                                               |
 | ------------- | ------------------------------------------------------------------------------------- |
@@ -191,65 +182,37 @@ Expected:
 | `404`         | Endpoint URL wrong (most often a region typo: `prod-eu-north-0` vs `prod-eu-west-2`). |
 | `ENOTFOUND`   | Hostname typo in `OTEL_EXPORTER_OTLP_ENDPOINT`.                                       |
 
-### View in Grafana
+## Why both @microlabs and @effect/opentelemetry?
 
-Explore → Tempo → TraceQL:
+`@effect/opentelemetry` provides Effect's `Tracer` service — the thing
+that turns `Effect.withSpan(...)` into actual OTel spans. It needs a real
+OTel `TracerProvider` to be useful.
 
-```text
-{resource.service.name="darna-backend" && resource.deployment.environment="local"}
-```
+`@microlabs/otel-cf-workers` provides that `TracerProvider` for
+Cloudflare Workers, with the right semantics for the runtime: per-request
+context via AsyncLocalStorage, span flushing via `ctx.waitUntil`, and
+auto-instrumentation for fetch and binding calls.
 
-Filter by environment to separate prod / staging / local. Replace `local` with `production` for the deployed Worker.
+Without @microlabs, Effect spans would be created against a no-op
+`TracerProvider` and silently dropped. Without `@effect/opentelemetry`,
+you'd lose the Effect-native `withSpan` ergonomics. Together they cover
+the gap.
 
-Examples:
+## Why we don't use Cloudflare's native trace destinations
 
-```text
-# Just the not-found spans
-{resource.service.name="darna-backend" && name="Todos.getById" && status=error}
-
-# Slow list operations
-{resource.service.name="darna-backend" && name="Todos.list" && duration > 100ms}
-
-# All spans tagged with a specific todo id
-{span.todo.id="<uuid>"}
-```
-
-## Operating it
-
-### Rotating the auth header
-
-1. Revoke the old token under [Cloud Access Policies → tokens](https://grafana.com/orgs/darnadigital/api-keys).
-2. Generate a new one on the OTLP page (it auto-creates a policy with `traces:write`).
-3. Update `apps/backend/.env` locally.
-4. Update `secrets.GRAFANA_OTEL_AUTH_HEADER` in both `production` and `staging` GitHub Environments.
-5. Trigger a redeploy (push to `master` / `staging` or run the workflow manually).
-
-### Region
-
-The endpoint embeds the Grafana stack region (`prod-eu-north-0` for darnadigital). The Basic auth token is region-bound — copying a north token into a west endpoint URL produces a 401. Always copy both values from the same Grafana page.
-
-### Cloudflare Worker isolate eviction
-
-`OtlpTracer` batches with a 5s default export interval. If a Worker isolate is evicted between requests, the in-flight buffer is lost. Acceptable for low traffic; if you see span gaps, reduce the interval inside `tracing.ts`:
-
-```ts
-OtlpTracer.layer({
-  url: "...",
-  exportInterval: Duration.seconds(1),
-  // ...
-});
-```
-
-### What's not exported (yet)
-
-Only `OtlpTracer` is wired up. `@effect/opentelemetry` also ships `OtlpMetric` and `OtlpLogger` Layers — same pattern when you need them. Grafana Cloud's gateway accepts all three at the same endpoint; the access policy just needs `metrics:write` / `logs:write` scopes added.
+Cloudflare's `observability.traces.destinations` only emits a fixed set
+of runtime spans (inbound fetch, a few binding ops). It does _not_
+register a `TracerProvider` for application code, so there's nowhere for
+`Effect.withSpan(...)` calls to land. We use the OTel-native path
+instead and let `@microlabs` handle export + flush.
 
 ## Files
 
-| Path                                     | Role                                                            |
-| ---------------------------------------- | --------------------------------------------------------------- |
-| `apps/backend/src/lib/effect/tracing.ts` | Builds `TracingLayer`, reads env, prints boot status            |
-| `apps/backend/src/lib/effect/runtime.ts` | `ServicesLayer = Layer.mergeAll(TracingLayer, …)`               |
-| `apps/backend/src/server.ts`             | `Layer.provide(ServicesLayer)` to `ApiLive`                     |
-| `apps/backend/.dev.vars.example`         | Template for local env vars                                     |
-| `.github/workflows/deploy.yml`           | `--var` for endpoint/env, `wrangler secret put` for auth header |
+| Path                                     | Role                                                                       |
+| ---------------------------------------- | -------------------------------------------------------------------------- |
+| `apps/backend/src/worker.ts`             | `instrument(...)` wrapper, `propagateRouteProcessor`, OTLP exporter config |
+| `apps/backend/src/server.ts`             | Hono middleware that sets `http.route` for non-API routes                  |
+| `apps/backend/src/lib/effect/tracing.ts` | `TracingLayer` with the lazy global tracer                                 |
+| `apps/backend/src/lib/effect/storage.ts` | `tryDb` — Effect wrapper that adds a span around drizzle promises          |
+| `apps/backend/wrangler.jsonc`            | `vars.OTEL_DEPLOYMENT_ENV`                                                 |
+| `apps/backend/.env.example`              | Local dev template                                                         |

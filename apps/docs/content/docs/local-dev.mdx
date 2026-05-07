@@ -1,0 +1,161 @@
+---
+title: Local dev
+description: Clone, set up .env, run wrangler dev. Roughly fifteen minutes if WorkOS and Grafana are already provisioned.
+---
+
+The whole stack runs locally with `pnpm dev`. Backend goes through `wrangler
+dev` (the real Workers runtime, not a Node fake), the Next.js apps through
+`next dev`. One terminal, four apps.
+
+## Prerequisites
+
+- Node 22+ (Wrangler v4 requires it).
+- pnpm 10+.
+- Postgres reachable from your machine — local, Docker, or hosted. Same URL
+  is used both as `DATABASE_URL` (for migrations) and as the local override
+  for the Hyperdrive binding.
+- A WorkOS account if you plan to touch the admin app — see [Auth](/docs/auth)
+  for the variables you need.
+
+## First-time setup
+
+<Steps>
+
+<Step>
+
+### Install dependencies
+
+```bash
+pnpm install
+```
+
+One lockfile at the repo root. If you see stray `pnpm-lock.yaml` files
+inside `apps/<app>/`, delete them — `create-next-app` and `create-hono`
+write one before they realise they're inside a workspace, and OpenNext's
+`findPackagerAndRoot` stops at the first lockfile it finds.
+
+</Step>
+
+<Step>
+
+### Copy env templates
+
+```bash
+cp apps/backend/.env.example      apps/backend/.env
+cp apps/admin/.env.local.example  apps/admin/.env.local
+```
+
+Fill in the values. The backend `.env` template documents each variable
+inline. The minimum to boot the backend is `DATABASE_URL` plus
+`CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` (the same value
+works for both during solo dev).
+
+</Step>
+
+<Step>
+
+### Run migrations
+
+```bash
+pnpm --filter @darna/backend db:migrate
+```
+
+Drizzle's migrator reads `DATABASE_URL` from `apps/backend/.env`. It runs
+once and is idempotent — safe to re-run after pulling new schema.
+
+</Step>
+
+<Step>
+
+### Start everything
+
+```bash
+pnpm dev
+```
+
+Four ports come up:
+
+| App              | URL                                    |
+| ---------------- | -------------------------------------- |
+| Backend          | http://localhost:4000                  |
+| Admin            | http://localhost:3000                  |
+| Web client       | http://localhost:7001                  |
+| Docs (this site) | http://localhost:3001                  |
+| Backend OpenAPI  | http://localhost:4000/openapi          |
+| Backend API ref  | http://localhost:4000/docs (Scalar UI) |
+
+</Step>
+
+</Steps>
+
+## Per-app dev commands
+
+```bash
+pnpm dev:backend     # wrangler dev --env-file=.env --port=4000
+pnpm dev:admin       # next dev --port=3000
+pnpm dev:web-client  # next dev --port=7001
+pnpm dev:docs        # next dev --port=3001
+```
+
+The backend script runs the actual Workers runtime under Miniflare —
+nodejs_compat, Hyperdrive, secrets, the lot. No more "works in dev, breaks
+on deploy" gap. `process.env` is populated from `.env`, Worker bindings
+are populated from the same file.
+
+## The single env file
+
+`apps/backend/.env` plays two roles for the backend:
+
+1. **Wrangler CLI variables.** `wrangler dev --env-file=.env` reads the file
+   and exposes its keys as `process.env.*`. That's how Hyperdrive picks up
+   `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` to point the
+   binding at your local Postgres.
+2. **Worker bindings.** Every key in the file also shows up on the `env`
+   argument inside the Worker (`env.WORKOS_CLIENT_ID`, etc.).
+
+That's it. No `.dev.vars` file. No second copy. Drizzle-kit and the migrate
+script read the same file via `tsx --env-file-if-exists=.env`.
+
+<Callout type="info">
+  Production never reads this file. Real secrets go through `wrangler secret put NAME` (and again
+  with `--env staging`). The wrangler.jsonc `vars` block holds non-secret config like
+  `OTEL_DEPLOYMENT_ENV`.
+</Callout>
+
+## Regenerating the typed web client
+
+After you change a backend route signature, the web client needs new types:
+
+```bash
+# in one terminal
+pnpm dev:backend
+
+# in another
+pnpm --filter web-client gen:api
+```
+
+`gen:api` hits `http://localhost:4000/openapi` and writes
+`apps/web-client/lib/api-schema.d.ts`. See [Web client](/docs/web-client) for
+how this stitches into `openapi-react-query`.
+
+## Common stumbles
+
+**`db accessed outside of a request scope`** — you imported `db` from
+`apps/backend/src/lib/db/client.ts` and called it from module-load code
+(top-level of a file, not inside a handler). The proxy resolves the request's
+drizzle instance via `AsyncLocalStorage`; outside a request there's nothing
+to resolve. Move the call inside an Effect or an async function that runs
+during a fetch.
+
+**Hyperdrive complains about a missing local connection string** — wrangler
+needs `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` in
+`process.env`. Add it to `apps/backend/.env`. The same value as
+`DATABASE_URL` is fine.
+
+**Port 4000 already in use** — usually a stale `wrangler dev` from a
+previous session. `pkill -f "wrangler dev"` and retry.
+
+**Admin returns 401 from `/api/admin/me`** — the admin's `WORKOS_CLIENT_ID`
+and the backend's `WORKOS_CLIENT_ID` must match. AuthKit signs against one,
+the backend's JWKS verifier checks against the other. See
+[Auth](/docs/auth).

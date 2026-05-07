@@ -32,10 +32,10 @@ pnpm deploy:backend     # individually
 pnpm deploy:admin
 pnpm deploy:docs
 
-# local Workers preview (closer-to-prod than `pnpm dev`)
-pnpm --filter @darna/backend dev:cf
-pnpm --filter @darna/admin   preview
-pnpm --filter @darna/docs    preview
+# Next.js local Workers preview (closer-to-prod than `next dev`)
+pnpm --filter @darna/admin preview
+pnpm --filter @darna/docs  preview
+# `pnpm dev:backend` already runs the real Workers runtime via wrangler dev.
 ```
 
 First deploy of each Worker creates a `*.workers.dev` subdomain. No DNS or
@@ -85,9 +85,12 @@ root lockfile is the only one that should exist.
 ## Environment
 
 - **Non-secret config** — `vars` block in `wrangler.jsonc`.
-- **Secrets** — `wrangler secret put NAME` from the app directory.
-- **Local secrets** — `apps/<app>/.dev.vars` (`wrangler dev` reads it).
-- **Local Node dev** — `apps/<app>/.env` (Node 22's `--env-file-if-exists=.env`).
+- **Secrets** — `wrangler secret put NAME` from the app directory (and again
+  with `--env staging` for staging).
+- **Local dev** — `apps/backend/.env`. Read by `wrangler dev --env-file=.env`
+  for both wrangler CLI vars and Worker bindings, and by drizzle-kit /
+  migrate via Node's `--env-file-if-exists`. Next.js apps use
+  `apps/<app>/.env.local`.
 
 ## Cloudflare credentials
 

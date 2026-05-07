@@ -3,20 +3,21 @@ title: Architecture
 description: How the darna-stack monorepo fits together.
 ---
 
-A pnpm monorepo with three apps. Each one ships independently to Cloudflare
-Workers. Auth crosses every boundary — WorkOS issues access tokens, the backend
-verifies them.
+A pnpm monorepo with three deployable apps. Everything ships to Cloudflare
+Workers — backend natively, the Next.js apps via OpenNext. Auth crosses every
+boundary: WorkOS issues access tokens, the backend verifies them.
 
 ## Layout
 
 ```text
 darna-stack/
 ├── apps/
-│   ├── backend/   Hono + Effect API on :4000
-│   ├── admin/     Next.js 16 admin panel on :3000
-│   └── docs/      Fumadocs site on :3001 (this app)
-├── infra/         deploy notes, env templates
-├── package.json   workspace root
+│   ├── backend/       Hono + Effect HttpApi on :4000 (wrangler dev)
+│   ├── admin/         Next.js 16 admin panel on :3000
+│   ├── web-client/    Next.js 16 client app on :7001
+│   └── docs/          Fumadocs site on :3001 (this app)
+├── infra/             deploy notes, env templates
+├── package.json       workspace root
 └── pnpm-workspace.yaml
 ```
 
@@ -26,73 +27,81 @@ darna-stack/
 flowchart TD
   WorkOS[WorkOS<br/>hosted sign-in, JWKS]
   Admin[admin :3000<br/>Next 16 + AuthKit]
-  Backend[backend :4000<br/>Hono + Effect + HttpApi]
-  Docs[/openapi · /docs<br/>Scalar UI/]
+  Web[web-client :7001<br/>Next 16 + openapi-react-query]
+  Backend[backend :4000<br/>Hono + Effect HttpApi]
 
   Admin -- "OAuth callback" --> WorkOS
-  WorkOS -- "JWT verify (JWKS)" --> Backend
+  WorkOS -- "JWKS verify" --> Backend
   Admin -- "Authorization: Bearer &lt;token&gt;" --> Backend
-  Backend --> Docs
+  Web -- "openapi-fetch (typed)" --> Backend
 ```
 
-The admin obtains a WorkOS access token via AuthKit, forwards it as
-`Authorization: Bearer …` to the backend, and the backend's auth middleware
+The admin obtains a WorkOS access token via AuthKit and forwards it as
+`Authorization: Bearer …`. The backend's `Authentication` middleware
 verifies the JWT against the WorkOS JWKS for the same `WORKOS_CLIENT_ID`.
+The web-client talks to the same backend through a generated, fully-typed
+client.
 
-## Apps
+## Sections
 
 <Cards>
   <Card
-    title="Backend"
-    href="/docs/backend"
-    description="Hono routes, Effect services, OpenAPI spec, Scalar docs viewer, adminMiddleware."
+    title="Local dev"
+    href="/docs/local-dev"
+    description="Clone, set up .env, run wrangler dev. Fifteen minutes."
   />
   <Card
-    title="Admin"
-    href="/docs/admin"
-    description="Next.js 16 with WorkOS AuthKit. Edge middleware enforces auth on every route."
+    title="Backend"
+    href="/docs/backend"
+    description="HttpApi composition, feature modules, the Worker entrypoint."
+  />
+  <Card
+    title="Web client"
+    href="/docs/web-client"
+    description="OpenAPI codegen plus openapi-react-query. End-to-end type safety."
   />
   <Card
     title="Auth"
     href="/docs/auth"
-    description="The WorkOS handshake end-to-end. What lives where."
+    description="WorkOS handshake end-to-end. What lives where."
+  />
+  <Card
+    title="Admin"
+    href="/docs/admin"
+    description="Next.js 16 with AuthKit. Edge middleware on every route."
+  />
+  <Card
+    title="Tracing"
+    href="/docs/tracing"
+    description="OpenTelemetry to Grafana via @microlabs/otel-cf-workers."
   />
   <Card
     title="Deploy"
     href="/docs/deploy"
-    description="Cloudflare Workers via wrangler (backend) and OpenNext (Next.js apps)."
+    description="Wrangler for backend, OpenNext for the Next.js apps."
   />
 </Cards>
 
 ## Conventions
 
-- **Package names** — `@darna/backend`, `@darna/admin`, `@darna/docs`. Workspace
-  filters use these (`pnpm --filter @darna/backend …`).
-- **Ports** — backend `4000`, admin `3000`, docs `3001`. Hardcoded in each
-  app's `dev` script so `pnpm dev` (parallel) doesn't collide.
+- **Package names** — `@darna/backend`, `@darna/admin`, `@darna/docs`,
+  `web-client`. Workspace filters use these (`pnpm --filter @darna/backend …`).
+- **Ports** — backend `4000`, admin `3000`, docs `3001`, web-client `7001`.
+  Hardcoded in each `dev` script so `pnpm dev` (parallel) doesn't collide.
 - **Wrangler** — every deployable app has its own `wrangler.jsonc`.
-  `compatibility_date` is the same across all three.
-- **Env files** — `.env` (Node dev), `.env.local` (Next.js dev),
-  `.dev.vars` (`wrangler dev`), all gitignored. Each app has a `.example`
-  next to it. Production secrets go through `wrangler secret put`.
-- **Effect runtime** — backend code provides services through one
-  `ManagedRuntime` (`src/lib/effect/runtime.ts`). HTTP handlers go through
-  `runRoute(span, c, effect)` which adds an OTel span and renders
-  `RenderableError` failures.
-
-<Callout type="info">
-  Every change to a Next.js app needs `turbopack.root` pinned to the monorepo root — pnpm's symlink
-  farm under `node_modules/.pnpm` lives outside the app directory, and Turbopack refuses to compile
-  anything outside its root. See [Deploy](/docs/deploy) for the exact config.
-</Callout>
+  `compatibility_date` is the same across all of them.
+- **Env files** — `apps/backend/.env` (read by `wrangler dev --env-file=.env`),
+  `apps/<next-app>/.env.local` (read by `next dev`). All gitignored, all
+  with a `.example` next to them. Production secrets go through
+  `wrangler secret put`.
+- **Effect** — backend code uses Effect `Service` + `Layer` for DI. HTTP
+  surface is `@effect/platform`'s `HttpApi`. One `TracingLayer` provides
+  the global OTel tracer.
 
 ## Top-level scripts
 
-| Command                                       | What it does                                 |
-| --------------------------------------------- | -------------------------------------------- |
-| `pnpm dev`                                    | All three apps in parallel                   |
-| `pnpm dev:backend` / `dev:admin` / `dev:docs` | One app at a time                            |
-| `pnpm typecheck`                              | Recursive `tsc --noEmit`                     |
-| `pnpm deploy`                                 | Backend → admin → docs to Cloudflare Workers |
-| `pnpm deps:check`                             | `pnpm outdated -r`                           |
-| `pnpm deps:update`                            | Interactive `pnpm update -r -i --latest`     |
+| Command          | What it does                                 |
+| ---------------- | -------------------------------------------- |
+| `pnpm dev`       | All apps in parallel                         |
+| `pnpm typecheck` | Recursive `tsc --noEmit`                     |
+| `pnpm deploy`    | Backend → admin → docs to Cloudflare Workers |

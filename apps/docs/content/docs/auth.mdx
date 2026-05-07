@@ -74,15 +74,21 @@ fetch(`${BACKEND_URL}/admin/me`, {
 
 ### Backend verifies against JWKS
 
-`apps/backend/src/middleware/admin.ts` reads the header. Using `jose`:
+The backend declares an `Authentication` middleware tag in
+[`features/admin/admin.auth.ts`](https://github.com/darnadigital/darna-stack/blob/master/apps/backend/src/features/admin/admin.auth.ts) and binds it to a bearer scheme.
+The implementation in [`admin.handlers.ts`](https://github.com/darnadigital/darna-stack/blob/master/apps/backend/src/features/admin/admin.handlers.ts) calls `verifyWorkOSAccessToken(token)`,
+which uses `jose`:
 
 ```ts
 const jwks = createRemoteJWKSet(new URL(`https://api.workos.com/sso/jwks/${WORKOS_CLIENT_ID}`));
 const { payload } = await jwtVerify(token, jwks);
-c.set("user", payload);
+return payload;
 ```
 
-Cached after the first call. No round-trip to WorkOS per request.
+The verified payload becomes the `CurrentUser` service for the duration
+of the request. Endpoint handlers read it via `yield* CurrentUser`.
+Failure short-circuits to a 401 `Unauthorized`. JWKS is cached after the
+first call — no round-trip to WorkOS per request.
 
 </Step>
 
@@ -90,13 +96,13 @@ Cached after the first call. No round-trip to WorkOS per request.
 
 ## What lives where
 
-| Concern                   | Owner   | File                                              |
-| ------------------------- | ------- | ------------------------------------------------- |
-| Session cookie            | Admin   | sealed via `iron-session` in `handleAuth()`       |
-| Access token issuance     | WorkOS  | code exchange at `/sso/token`                     |
-| Access token verification | Backend | `verifyWorkOSAccessToken` in `lib/auth/workos.ts` |
-| Per-request user object   | Admin   | `withAuth({ ensureSignedIn: true })`              |
-| Per-request user object   | Backend | `c.get("user")` after `adminMiddleware`           |
+| Concern                   | Owner   | File                                                          |
+| ------------------------- | ------- | ------------------------------------------------------------- |
+| Session cookie            | Admin   | sealed via `iron-session` in `handleAuth()`                   |
+| Access token issuance     | WorkOS  | code exchange at `/sso/token`                                 |
+| Access token verification | Backend | `verifyWorkOSAccessToken` in `lib/auth/workos.ts`             |
+| Per-request user object   | Admin   | `withAuth({ ensureSignedIn: true })`                          |
+| Per-request user object   | Backend | `yield* CurrentUser` inside an `Authentication`-guarded group |
 
 ## The two clients
 
@@ -117,14 +123,21 @@ piece — if they drift, every request to `/admin/me` returns 401.
 
 ## Adding a new protected route
 
-**Backend** — apply `adminMiddleware` to a sub-app or per-route:
+**Backend** — declare an `HttpApiGroup` and chain `.middleware(Authentication)`:
 
 ```ts
-new Hono().use("*", adminMiddleware).get("/me", (c) => c.json(c.get("user")));
+// features/<thing>/http/<thing>.api.ts
+export class ThingApi extends HttpApiGroup.make("thing")
+  .add(HttpApiEndpoint.get("get", "/things/:id").setPath(IdParam).addSuccess(Thing))
+  .middleware(Authentication) {}
 ```
 
-**Admin** — already protected by `middleware.ts`. Just call `withAuth()` and
-use `accessToken`:
+Then add it to `Api` in [`src/api.ts`](https://github.com/darnadigital/darna-stack/blob/master/apps/backend/src/api.ts) and provide the handlers in
+[`server.ts`](https://github.com/darnadigital/darna-stack/blob/master/apps/backend/src/server.ts). Inside a handler, read the verified user via
+`yield* CurrentUser`.
+
+**Admin** — already protected by `middleware.ts`. Call `withAuth()` and
+forward `accessToken`:
 
 ```tsx
 const { accessToken } = await withAuth({ ensureSignedIn: true });

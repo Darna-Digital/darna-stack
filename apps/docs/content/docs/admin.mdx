@@ -75,15 +75,15 @@ The landing page does the round-trip on every render:
 ```tsx
 // src/app/page.tsx
 const { user, accessToken } = await withAuth({ ensureSignedIn: true });
-const res = await fetch(`${BACKEND_URL}/admin/me`, {
+const res = await fetch(`${BACKEND_URL}/api/admin/me`, {
   headers: { Authorization: `Bearer ${accessToken}` },
   cache: "no-store",
 });
 ```
 
-A green pill with the status code means `adminMiddleware` accepted the token.
-Red means something's misaligned — usually the two `WORKOS_CLIENT_ID` values
-disagree.
+A green pill with the status code means the `Authentication` middleware on
+the backend accepted the token. Red means something's misaligned — usually
+the two `WORKOS_CLIENT_ID` values disagree.
 
 ## Env
 

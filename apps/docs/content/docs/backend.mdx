@@ -1,131 +1,287 @@
 ---
 title: Backend
-description: Hono on Cloudflare Workers, Effect for services, hono-openapi for the spec.
+description: Hono on Cloudflare Workers, Effect HttpApi for the API surface, drizzle-orm via Hyperdrive for Postgres.
 ---
 
-`@darna/backend` is a Hono app with one entry per runtime — `src/index.ts` for
-local Node dev (`@hono/node-server`) and `src/worker.ts` for Cloudflare Workers.
-Both import the same `app` from `src/server.ts`, so route definitions are
-shared.
+`@darna/backend` is a single Cloudflare Worker. The Worker handler runs Hono;
+Hono delegates `/api/*` to Effect's `HttpApi`, which is built from feature
+modules. Each feature owns its schema, errors, repository, service, layer,
+and HTTP wiring — no shared "controllers" folder.
 
 ## Layout
 
 ```text
 apps/backend/src/
-├── index.ts                 Node entry — @hono/node-server, port 4000
-├── worker.ts                Workers entry — `export default app`
-├── server.ts                Hono app, routes, /openapi, /docs (Scalar)
+├── worker.ts                     Cloudflare entrypoint (instrumented)
+├── server.ts                     Hono app, /openapi, /docs (Scalar)
+├── api.ts                        HttpApi composition
 ├── features/
-│   ├── todo/                model, repository, service, layer, routes
-│   └── admin/admin.routes.ts
-├── middleware/
-│   └── admin.ts             adminMiddleware (WorkOS JWT verify)
-└── lib/
-    ├── auth/workos.ts       jose + JWKS verifier
-    └── effect/
-        ├── runtime.ts       AppRuntime (ManagedRuntime)
-        ├── api-route.ts     runRoute — Hono ↔ Effect bridge
-        └── current-user.ts  Context.Tag (reserved for future use)
+│   ├── todo/
+│   │   ├── schema/               Effect Schema models + tagged errors
+│   │   ├── repository/           interface + db / memory impls
+│   │   ├── service/              Effect.Service (business logic + spans)
+│   │   ├── layer/                wires service ↔ repository
+│   │   └── http/                 HttpApiGroup + handlers
+│   ├── project/                  same shape
+│   └── admin/                    bearer-auth + /admin/me
+├── lib/
+│   ├── auth/workos.ts            jose + JWKS verifier
+│   ├── db/client.ts              AsyncLocalStorage db proxy
+│   ├── db/schema.ts              drizzle schema
+│   └── effect/
+│       ├── tracing.ts            TracingLayer (lazy global tracer)
+│       └── storage.ts            tryDb — Effect wrapper over drizzle
+└── scripts/migrate.ts            tsx-run drizzle migrator
 ```
 
-## Routes
+## HttpApi composition
 
-| Path                           | Auth   | Notes                                           |
-| ------------------------------ | ------ | ----------------------------------------------- |
-| `GET /health`                  | —      | Liveness check                                  |
-| `GET /openapi`                 | —      | OpenAPI 3.1 spec, generated from route metadata |
-| `GET /docs`                    | —      | Scalar API reference UI, points at `/openapi`   |
-| `GET /todos`, `POST /todos`, … | —      | Demo CRUD against an in-memory repo             |
-| `GET /admin/me`                | Bearer | Returns the verified WorkOS user                |
-
-## Effect
-
-Services use the `Effect.Service` pattern with `accessors: true`, so you call
-methods directly on the class:
+The whole API is one declarative tree. `Api` lives in
+[`src/api.ts`](https://github.com/darnadigitalal/darna-stack/blob/master/apps/backend/src/api.ts):
 
 ```ts
-// src/features/todo/todo.service.ts
+export class Api extends HttpApi.make("darna")
+  .add(TodoApi)
+  .add(ProjectApi)
+  .add(AdminApi)
+  .prefix("/api") {}
+```
+
+Each `*Api` is an `HttpApiGroup`, declaring endpoints with Effect Schema
+for path params, payloads, success types, and error types. The schema is
+the contract — OpenAPI is derived from it, and the typed web client
+consumes that OpenAPI.
+
+```ts
+// features/todo/http/todo.api.ts
+export class TodoApi extends HttpApiGroup.make("todo")
+  .add(HttpApiEndpoint.get("list", "/todos").addSuccess(Schema.Array(Todo)))
+  .add(
+    HttpApiEndpoint.get("get", "/todos/:id")
+      .setPath(IdParam)
+      .addSuccess(Todo)
+      .addError(TodoNotFound),
+  )
+  .add(
+    HttpApiEndpoint.post("create", "/todos")
+      .setPayload(CreateTodo)
+      .addSuccess(Todo, { status: 201 }),
+  ) {
+  // ...
+}
+```
+
+Handlers live separately and provide implementations for the endpoints
+declared in the group:
+
+```ts
+// features/todo/http/todo.handlers.ts
+const TodoHandlersLive = HttpApiBuilder.group(Api, "todo", (handlers) =>
+  handlers
+    .handle("list", () => Todos.list().pipe(Effect.map((arr) => [...arr])))
+    .handle("get", ({ path }) => Todos.getById(path.id))
+    .handle("create", ({ payload }) => Todos.create(payload))
+    .handle("update", ({ path, payload }) => Todos.update(path.id, payload))
+    .handle("remove", ({ path }) => Todos.remove(path.id)),
+);
+
+export const TodoHandlers = TodoHandlersLive.pipe(Layer.provide(TodosLive));
+```
+
+`server.ts` glues it together:
+
+```ts
+const ApiLive = HttpApiBuilder.api(Api).pipe(
+  Layer.provide([TodoHandlers, ProjectHandlers, AdminHandlers]),
+  Layer.provide(TracingLayer),
+);
+
+const { handler: apiHandler } = HttpApiBuilder.toWebHandler(
+  Layer.mergeAll(ApiLive, HttpApiBuilder.Router.Live, HttpServer.layerContext),
+);
+
+export const app = new Hono()
+  .use("*", cors(/* ... */))
+  .get("/health", (c) => c.json({ ok: true }))
+  .get("/openapi", (c) => c.json(spec as object))
+  .get("/docs", Scalar({ url: "/openapi", pageTitle: "Darna Backend — API" }))
+  .all("/api/*", (c) => apiHandler(c.req.raw));
+```
+
+## Feature module shape
+
+Every feature follows the same vertical slice. Walking through `todo/`:
+
+| File                                   | Role                                                                                        |
+| -------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `schema/todo.model.ts`                 | `TodoId` (branded UUID), `Todo`, `CreateTodo`, `UpdateTodo` — all Effect Schema             |
+| `schema/todo.errors.ts`                | `TodoNotFound` (`Schema.TaggedError` annotated with HTTP `status: 404`)                     |
+| `repository/todo.repository.ts`        | `TodoRepo` interface + `Context.Tag` for it                                                 |
+| `repository/todo.repository.db.ts`     | drizzle-backed implementation                                                               |
+| `repository/todo.repository.memory.ts` | in-memory impl for tests                                                                    |
+| `service/todo.service.ts`              | `Effect.Service` wrapping the repo, adds spans, translates "row not found" → `TodoNotFound` |
+| `layer/todo.layer.ts`                  | `TodosLive` (db repo) and `TodosMemory(seed)` (test repo)                                   |
+| `http/todo.api.ts`                     | `HttpApiGroup` declaring endpoints                                                          |
+| `http/todo.handlers.ts`                | `HttpApiBuilder.group(Api, "todo", …)` — the implementation                                 |
+
+The repository interface decouples the service from drizzle. Tests provide
+`TodosMemory(seed)` and exercise services without a database; production
+provides `TodosLive` and gets real persistence.
+
+```ts
+// features/todo/service/todo.service.ts
 export class Todos extends Effect.Service<Todos>()("Todos", {
   accessors: true,
   effect: Effect.gen(function* () {
     const repo = yield* TodoRepository;
-    return {
-      list: () => repo.list().pipe(Effect.withSpan("Todos.list")),
-      // …
-    };
+
+    const list = (): Effect.Effect<readonly Todo[]> =>
+      repo.list().pipe(Effect.withSpan("Todos.list"));
+
+    const getById = (id: TodoId): Effect.Effect<Todo, TodoNotFound> =>
+      Effect.gen(function* () {
+        const todo = yield* repo.findById(id);
+        if (!todo) return yield* Effect.fail(new TodoNotFound({ id }));
+        return todo;
+      }).pipe(Effect.withSpan("Todos.getById", { attributes: { "todo.id": id } }));
+
+    // ...
+    return { list, getById /* ... */ } as const;
   }),
 }) {}
 ```
 
-A single `ManagedRuntime` provides every service:
+## Database access
+
+`apps/backend/src/lib/db/client.ts` exports a `db` proxy that resolves at
+property-access time from an `AsyncLocalStorage` slot:
 
 ```ts
-// src/lib/effect/runtime.ts
-const AppLayer = Layer.mergeAll(TodosLive);
-export const AppRuntime = ManagedRuntime.make(AppLayer);
+const dbStore = new AsyncLocalStorage<Db>();
+
+export const runWithDb = <T>(db: Db, fn: () => T): T => dbStore.run(db, fn);
+
+export const db = new Proxy({} as Db, {
+  get: (_t, prop, receiver) => {
+    const d = dbStore.getStore();
+    if (!d) throw new Error("db accessed outside of a request scope");
+    return Reflect.get(d, prop, receiver);
+  },
+});
 ```
 
-Hono handlers call `runRoute` to execute an Effect against `AppRuntime`:
+The Worker handler establishes the request-scoped drizzle instance once
+per request:
 
 ```ts
-// src/features/todo/todo.routes.ts
-.get("/", describeRoute({ /* … */ }), (c) =>
-  runRoute("GET /todos", c, Todos.list()),
-)
+// worker.ts
+async fetch(request, env, ctx) {
+  const client = new Client({ connectionString: env.HYPERDRIVE.connectionString });
+  await client.connect();
+  const db = drizzle(client, { schema });
+  try {
+    return await runWithDb(db, () => app.fetch(request, env, ctx));
+  } finally {
+    ctx.waitUntil(client.end());
+  }
+}
 ```
 
-`runRoute` wraps the effect in `Effect.withSpan(name)`, runs it, serializes
-success values as JSON, and renders failures via `.toResponse()` when the
-error implements `RenderableError`. Anything else becomes a 500.
+Every repository in `features/*/repository/*.repository.db.ts` imports the
+proxy and uses it normally — drizzle queries don't need to know about
+`AsyncLocalStorage`. Hyperdrive's connection string changes each request
+(it points at a pooled connection), so the per-request `Client` is
+intentional, not optional.
 
-## OpenAPI
-
-Routes use `hono-openapi`'s `describeRoute` + `validator` + `resolver`:
+`tryDb(name, run)` in [`lib/effect/storage.ts`](https://github.com/darnadigitalal/darna-stack/blob/master/apps/backend/src/lib/effect/storage.ts) wraps a drizzle promise in
+an Effect, adds an OTel span, and converts thrown errors into a `StorageError`
+defect (so they fail loud, not as recoverable typed errors):
 
 ```ts
-.post(
-  "/",
-  describeRoute({
-    operationId: "todo.create",
-    summary: "Create a todo",
-    responses: ok(Todo),
-  }),
-  validator("json", CreateTodo),
-  (c) => runRoute("POST /todos", c, Todos.create(c.req.valid("json"))),
-)
+list: () =>
+  tryDb("pg.todos.list", () => db.select().from(todos)).pipe(
+    Effect.map((rows) => rows.map(rowToTodo)),
+  );
 ```
 
-The Zod schemas double as request validators and OpenAPI schema sources.
-`/openapi` returns the spec; `/docs` renders it with Scalar.
+## Worker entrypoint
 
-## adminMiddleware
-
-`src/middleware/admin.ts` reads `Authorization: Bearer <token>`, verifies
-against the WorkOS JWKS for `WORKOS_CLIENT_ID`, and stashes the payload as
-`c.get("user")`. 401 on missing or invalid tokens.
+`worker.ts` is wrapped with `@microlabs/otel-cf-workers` so every request
+gets a trace, and so OpenTelemetry's global API is plugged into a real
+`TracerProvider` for the duration of the request:
 
 ```ts
-// src/features/admin/admin.routes.ts
-export const adminRoutes = new Hono().use("*", adminMiddleware).get(
-  "/me",
-  describeRoute({
-    /* … */
-  }),
-  (c) => c.json(c.get("user")),
-);
+const handler = {
+  async fetch(request, env, ctx) {
+    /* runWithDb + app.fetch as above */
+  },
+} satisfies ExportedHandler<Env>;
+
+const config: ResolveConfigFn<Env> = (env) => {
+  const exporter = new OTLPExporter({
+    url: `${env.OTEL_EXPORTER_OTLP_ENDPOINT.replace(/\/$/, "")}/v1/traces`,
+    headers: { Authorization: env.GRAFANA_OTEL_AUTH_HEADER },
+  });
+  return {
+    spanProcessors: [makePropagateRouteProcessor(), new BatchTraceSpanProcessor(exporter)],
+    service: {
+      name: "darna-backend",
+      namespace: env.OTEL_DEPLOYMENT_ENV ?? "production",
+      version: "0.0.0",
+    },
+  };
+};
+
+export default instrument(handler, config);
 ```
 
-JWKS is fetched lazily on first verification, so module load works on Workers
-even if the env binding hasn't been resolved yet.
+`makePropagateRouteProcessor` copies `http.route` from Effect's
+`http.server` child span up to the @microlabs root, so trace lists show
+`GET /todos` instead of `fetchHandler GET`. See [Tracing](/docs/tracing).
 
-See [Auth](/docs/auth) for the end-to-end flow.
+## Routes
 
-## Local dev
+| Method   | Path             | Auth   | Notes                                        |
+| -------- | ---------------- | ------ | -------------------------------------------- |
+| `GET`    | `/health`        | —      | Liveness check (Hono direct)                 |
+| `GET`    | `/openapi`       | —      | OpenAPI 3.1 spec from `OpenApi.fromApi(Api)` |
+| `GET`    | `/docs`          | —      | Scalar API reference UI                      |
+| `GET`    | `/api/todos`     | —      | List                                         |
+| `GET`    | `/api/todos/:id` | —      | Returns 404 `TodoNotFound`                   |
+| `POST`   | `/api/todos`     | —      | 201                                          |
+| `PATCH`  | `/api/todos/:id` | —      |                                              |
+| `DELETE` | `/api/todos/:id` | —      | 204                                          |
+| `GET`    | `/api/projects`  | —      | Same shape as todos                          |
+| `GET`    | `/api/admin/me`  | Bearer | WorkOS-verified                              |
 
-```bash
-pnpm dev:backend       # tsx watch on Node, port 4000
-pnpm --filter @darna/backend dev:cf   # wrangler dev (Workers runtime)
-```
+## Adding a feature
 
-`pnpm dev:backend` reads `apps/backend/.env` via Node 22's
-`--env-file-if-exists`. `wrangler dev` reads `.dev.vars`.
+Copy `features/todo/` into `features/<thing>/`, then:
+
+1. Edit `schema/<thing>.model.ts` — define your domain types as Effect Schema.
+2. Edit `schema/<thing>.errors.ts` — declare typed errors with HTTP status
+   annotations.
+3. Edit `repository/<thing>.repository.ts` — declare the repo interface and
+   `Context.Tag`.
+4. Edit `repository/<thing>.repository.db.ts` — implement against drizzle
+   using `tryDb(...)` for span coverage.
+5. Edit `service/<thing>.service.ts` — `Effect.Service` with `accessors:
+true`. Wrap each method with `Effect.withSpan(...)`.
+6. Edit `layer/<thing>.layer.ts` — `Live` and `Memory(seed)` layers.
+7. Edit `http/<thing>.api.ts` — `HttpApiGroup` with endpoints.
+8. Edit `http/<thing>.handlers.ts` — `HttpApiBuilder.group(Api, "<thing>", …)`.
+9. Add to `src/api.ts`: `.add(<Thing>Api)`.
+10. Add the handlers to `server.ts`: `Layer.provide([… ThingHandlers …])`.
+
+If your feature talks to the database, add migrations next to
+`lib/db/schema.ts` and run `pnpm db:generate && pnpm db:migrate`.
+
+## What runs at module load vs per-request
+
+- **Module load (cold start)** — `Api`, `ApiLive`, `apiHandler`, `app`, the
+  `instrument(...)` wrapper, the JWKS object (lazily, on first verification).
+- **Per-request** — drizzle Client + connection, `runWithDb` scope, every
+  Effect span, JWT verification.
+
+This matters mainly for `db` and `trace.getActiveSpan()` — both only work
+inside a request, never at module load.
