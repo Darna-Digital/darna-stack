@@ -1,5 +1,6 @@
 import { OtlpSerialization, OtlpTracer, Resource, Tracer } from "@effect/opentelemetry";
 import { FetchHttpClient } from "@effect/platform";
+import { trace, type Tracer as OtelTracer } from "@opentelemetry/api";
 import { Layer } from "effect";
 
 // Two-mode tracing:
@@ -9,29 +10,43 @@ import { Layer } from "effect";
 //    Grafana via OtlpTracer.layer. The 5s batch interval is fine on Node.
 //
 // 2. Cloudflare Worker (`wrangler dev` and prod) — those vars are NOT in
-//    process.env (Workers expose env via the fetch handler arg, not process),
-//    so we fall through to Tracer.layerGlobalTracer. The Worker entrypoint is
-//    wrapped with @microlabs/otel-cf-workers `instrument(...)`, which registers
-//    a real OTel TracerProvider on the global API per request and flushes spans
-//    via ctx.waitUntil before the isolate suspends. Effect's spans flow through
-//    that provider alongside the auto-instrumented inbound fetch, Hyperdrive,
-//    and subrequest spans.
+//    process.env, so we fall through to a lazy global-tracer layer. The Worker
+//    entrypoint is wrapped with @microlabs/otel-cf-workers `instrument(...)`,
+//    which calls `trace.setGlobalTracerProvider(...)` per request and flushes
+//    spans via ctx.waitUntil. We can't use `Tracer.layerGlobalTracer` directly:
+//    it captures `trace.getTracerProvider()` at layer-build time (which on
+//    Workers is module load), so it captures the noop provider before
+//    @microlabs has registered the real one. Instead, wrap the global API in
+//    a tracer that re-resolves `trace.getTracer(...)` on every startSpan call.
 const endpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
 const authHeader = process.env.GRAFANA_OTEL_AUTH_HEADER;
 const deploymentEnv = process.env.OTEL_DEPLOYMENT_ENV ?? "local";
 
+const SERVICE_NAME = "darna-backend";
+const SERVICE_VERSION = "0.0.0";
+
 const resourceConfig = {
-  serviceName: "darna-backend",
-  serviceVersion: "0.0.0",
+  serviceName: SERVICE_NAME,
+  serviceVersion: SERVICE_VERSION,
   attributes: {
     "deployment.environment": deploymentEnv,
   } as Record<string, string>,
 };
 
+const lazyOtelTracer: OtelTracer = {
+  startSpan: (...args) => trace.getTracer(SERVICE_NAME, SERVICE_VERSION).startSpan(...args),
+  startActiveSpan: ((...args: Parameters<OtelTracer["startActiveSpan"]>) =>
+    (trace.getTracer(SERVICE_NAME, SERVICE_VERSION).startActiveSpan as (...a: unknown[]) => unknown)(
+      ...args,
+    )) as OtelTracer["startActiveSpan"],
+};
+
+const layerLazyTracer = Layer.succeed(Tracer.OtelTracer, lazyOtelTracer);
+
 if (endpoint && authHeader) {
   console.log(`[tracing] OTLP direct push → ${endpoint} (env=${deploymentEnv})`);
 } else {
-  console.log(`[tracing] global tracer — @microlabs/otel-cf-workers handles export`);
+  console.log(`[tracing] global tracer (lazy) — @microlabs/otel-cf-workers handles export`);
 }
 
 export const TracingLayer: Layer.Layer<never> =
@@ -42,6 +57,6 @@ export const TracingLayer: Layer.Layer<never> =
         resource: resourceConfig,
       }).pipe(Layer.provide(OtlpSerialization.layerJson), Layer.provide(FetchHttpClient.layer))
     : Tracer.layerWithoutOtelTracer.pipe(
-        Layer.provide(Tracer.layerGlobalTracer),
+        Layer.provide(layerLazyTracer),
         Layer.provide(Resource.layer(resourceConfig)),
       );
