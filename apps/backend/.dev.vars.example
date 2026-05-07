@@ -12,9 +12,14 @@ WORKOS_CLIENT_ID=
 # (e.g. listing users, creating organizations). Not required for token verification.
 # WORKOS_API_KEY=
 
-# OpenTelemetry → Grafana Cloud. Both must be set for spans to export;
-# otherwise TracingLayer is a no-op (Effect.withSpan calls still run, just
-# don't ship anywhere).
+# OpenTelemetry → Grafana Cloud.
+#
+#   - For local Node dev (`pnpm dev`): set in `.env`. TracingLayer pushes spans
+#     directly via @effect/opentelemetry's OtlpTracer.
+#   - For local Worker dev (`wrangler dev`): set in `.dev.vars`.
+#     @microlabs/otel-cf-workers reads them from env and exports per-request.
+#   - For production: `wrangler secret put OTEL_EXPORTER_OTLP_ENDPOINT` and
+#     `wrangler secret put GRAFANA_OTEL_AUTH_HEADER` (and again with --env staging).
 #
 # Both values come from your Grafana Cloud OTLP integration page
 # (Connections → Add → OpenTelemetry). Copy them verbatim — the auth header
@@ -23,5 +28,6 @@ WORKOS_CLIENT_ID=
 # OTEL_EXPORTER_OTLP_ENDPOINT=https://otlp-gateway-prod-eu-north-0.grafana.net/otlp
 # GRAFANA_OTEL_AUTH_HEADER=Basic <long base64>
 #
-# Optional — tags every span with `deployment.environment`. Defaults to "local".
+# Tags every span with `deployment.environment`. Defaults to "local" in Node
+# and "production" in the Worker (set via wrangler.jsonc `vars`).
 # OTEL_DEPLOYMENT_ENV=local
