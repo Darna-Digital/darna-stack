@@ -11,8 +11,8 @@
     "logs": {
       "enabled": true,
       "destinations": ["grafana-logs"],
-      "head_sampling_rate": 1,
-    },
+      "head_sampling_rate": 1
+    }
   },
   "routes": [{ "pattern": "darna-stack-backend.darnadigital.com", "custom_domain": true }],
   "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "44ef9aa003384c76965ec29d2624e0d9" }],
@@ -21,17 +21,17 @@
     "staging": {
       "name": "darna-backend-staging",
       "routes": [
-        { "pattern": "staging-darna-stack-backend.darnadigital.com", "custom_domain": true },
+        { "pattern": "staging-darna-stack-backend.darnadigital.com", "custom_domain": true }
       ],
       "observability": {
         "enabled": true,
         "logs": {
           "enabled": true,
           "destinations": ["grafana-logs"],
-          "head_sampling_rate": 1,
-        },
+          "head_sampling_rate": 1
+        }
       },
-      "vars": { "OTEL_DEPLOYMENT_ENV": "staging" },
-    },
-  },
+      "vars": { "OTEL_DEPLOYMENT_ENV": "staging" }
+    }
+  }
 }

@@ -8,4 +8,10 @@ export default {
   bracketSpacing: true,
   arrowParens: "always",
   endOfLine: "lf",
+  overrides: [
+    {
+      files: ["*.jsonc"],
+      options: { trailingComma: "none" },
+    },
+  ],
 };
