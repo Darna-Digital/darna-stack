@@ -36,9 +36,9 @@ const resourceConfig = {
 const lazyOtelTracer: OtelTracer = {
   startSpan: (...args) => trace.getTracer(SERVICE_NAME, SERVICE_VERSION).startSpan(...args),
   startActiveSpan: ((...args: Parameters<OtelTracer["startActiveSpan"]>) =>
-    (trace.getTracer(SERVICE_NAME, SERVICE_VERSION).startActiveSpan as (...a: unknown[]) => unknown)(
-      ...args,
-    )) as OtelTracer["startActiveSpan"],
+    (
+      trace.getTracer(SERVICE_NAME, SERVICE_VERSION).startActiveSpan as (...a: unknown[]) => unknown
+    )(...args)) as OtelTracer["startActiveSpan"],
 };
 
 const layerLazyTracer = Layer.succeed(Tracer.OtelTracer, lazyOtelTracer);
