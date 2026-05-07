@@ -1,6 +1,13 @@
 import { Client } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { instrument, type ResolveConfigFn } from "@microlabs/otel-cf-workers";
+import {
+  BatchTraceSpanProcessor,
+  instrument,
+  OTLPExporter,
+  type ResolveConfigFn,
+} from "@microlabs/otel-cf-workers";
+import type { ReadableSpan, Span as SDKSpan, SpanProcessor } from "@opentelemetry/sdk-trace-base";
+import type { Context } from "@opentelemetry/api";
 import { app } from "./server.js";
 import { runWithDb } from "./lib/db/client.js";
 import * as schema from "./lib/db/schema.js";
@@ -25,16 +32,45 @@ const handler = {
   },
 } satisfies ExportedHandler<Env>;
 
-const config: ResolveConfigFn<Env> = (env) => ({
-  exporter: {
+function makePropagateRouteProcessor(): SpanProcessor {
+  const rootByTrace = new Map<string, SDKSpan>();
+  return {
+    onStart(span: SDKSpan, _parentContext: Context) {
+      if (span.parentSpanContext === undefined) {
+        rootByTrace.set(span.spanContext().traceId, span);
+      }
+    },
+    onEnd(span: ReadableSpan) {
+      const traceId = span.spanContext().traceId;
+      if (span.parentSpanContext === undefined) {
+        rootByTrace.delete(traceId);
+        return;
+      }
+      const route = span.attributes["http.route"];
+      if (typeof route !== "string") return;
+      const root = rootByTrace.get(traceId);
+      if (root && root.attributes["http.route"] === undefined) {
+        root.setAttribute("http.route", route);
+      }
+    },
+    forceFlush: () => Promise.resolve(),
+    shutdown: () => Promise.resolve(),
+  };
+}
+
+const config: ResolveConfigFn<Env> = (env) => {
+  const exporter = new OTLPExporter({
     url: `${env.OTEL_EXPORTER_OTLP_ENDPOINT.replace(/\/$/, "")}/v1/traces`,
     headers: { Authorization: env.GRAFANA_OTEL_AUTH_HEADER },
-  },
-  service: {
-    name: "darna-backend",
-    namespace: env.OTEL_DEPLOYMENT_ENV ?? "production",
-    version: "0.0.0",
-  },
-});
+  });
+  return {
+    spanProcessors: [makePropagateRouteProcessor(), new BatchTraceSpanProcessor(exporter)],
+    service: {
+      name: "darna-backend",
+      namespace: env.OTEL_DEPLOYMENT_ENV ?? "production",
+      version: "0.0.0",
+    },
+  };
+};
 
 export default instrument(handler, config);
