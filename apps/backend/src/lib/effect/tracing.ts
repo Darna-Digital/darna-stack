@@ -18,8 +18,17 @@ import { Layer } from "effect";
 //    Workers is module load), so it captures the noop provider before
 //    @microlabs has registered the real one. Instead, wrap the global API in
 //    a tracer that re-resolves `trace.getTracer(...)` on every startSpan call.
-const endpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
-const authHeader = process.env.GRAFANA_OTEL_AUTH_HEADER;
+// On Workers, `nodejs_compat` exposes vars/secrets through process.env, so we
+// can't use "endpoint set in process.env?" as the discriminator for the OTLP
+// direct-push branch. Detect the Workers runtime explicitly and force the
+// global-tracer branch there — OtlpTracer.layer batches at 5s and the isolate
+// freezes after the response, which silently drops Effect spans.
+const isWorker =
+  (globalThis as { navigator?: { userAgent?: string } }).navigator?.userAgent ===
+  "Cloudflare-Workers";
+
+const endpoint = isWorker ? undefined : process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+const authHeader = isWorker ? undefined : process.env.GRAFANA_OTEL_AUTH_HEADER;
 const deploymentEnv = process.env.OTEL_DEPLOYMENT_ENV ?? "local";
 
 const SERVICE_NAME = "darna-backend";
