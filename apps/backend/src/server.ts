@@ -22,20 +22,9 @@ const spec = OpenApi.fromApi(Api);
 
 export const app = new Hono()
   .use("*", cors({ origin: (o) => o ?? "*", credentials: true }))
-  .onError((err, c) => {
-    console.error("Unhandled error", err);
-    return c.json({ error: "internal_server_error", message: String(err) }, 500);
-  })
   .get("/health", (c) => c.json({ ok: true }))
   .get("/openapi", (c) => c.json(spec as object))
   .get("/docs", Scalar({ url: "/openapi", pageTitle: "Darna Backend — API" }))
-  .all("/api/*", async (c) => {
-    try {
-      return await apiHandler(c.req.raw);
-    } catch (err) {
-      console.error("API handler error", err);
-      return c.json({ error: "internal_server_error", message: String(err) }, 500);
-    }
-  });
+  .all("/api/*", (c) => apiHandler(c.req.raw));
 
 export type AppType = typeof app;
