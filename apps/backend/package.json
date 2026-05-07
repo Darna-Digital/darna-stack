@@ -14,10 +14,7 @@
     }
   },
   "scripts": {
-    "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
-    "dev:cf": "wrangler dev",
-    "build": "tsc",
-    "start": "node dist/index.js",
+    "dev": "wrangler dev --env-file=.env --port=4000",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -32,8 +29,6 @@
   "dependencies": {
     "@effect/opentelemetry": "^0.63.0",
     "@effect/platform": "^0.96.1",
-    "@effect/platform-node": "^0.106.0",
-    "@hono/node-server": "^2.0.1",
     "@microlabs/otel-cf-workers": "1.0.0-rc.52",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/resources": "^2.7.1",

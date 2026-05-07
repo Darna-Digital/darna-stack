@@ -103,18 +103,18 @@ After the one-time setup, every push to `master` deploys production; every push 
 pnpm dev
 
 # one at a time
-pnpm dev:backend         # tsx watch on Node, :4000
+pnpm dev:backend         # wrangler dev, :8787
 pnpm dev:admin           # next dev, :3000
 pnpm dev:docs            # next dev, :3001
 
 # closer-to-prod (Workers runtime locally)
-pnpm --filter @darna/backend dev:cf       # wrangler dev
 pnpm --filter @darna/admin   preview      # opennext build + wrangler preview
 pnpm --filter @darna/docs    preview
 ```
 
-`pnpm dev:backend` reads `apps/backend/.env` (Node 22's `--env-file-if-exists`).
-`wrangler dev` reads `apps/<app>/.dev.vars`.
+`pnpm dev:backend` is `wrangler dev --env-file=.env` — it reads
+`apps/backend/.env` for both wrangler CLI vars (e.g. the Hyperdrive local
+connection string) and Worker bindings.
 `next dev` reads `apps/<app>/.env.local`.
 
 ---
