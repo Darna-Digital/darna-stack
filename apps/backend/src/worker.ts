@@ -32,14 +32,8 @@ const config: ResolveConfigFn<Env> = (env) => ({
   },
   service: {
     name: "darna-backend",
+    namespace: env.OTEL_DEPLOYMENT_ENV ?? "production",
     version: "0.0.0",
-  },
-  postProcessor: (spans) => {
-    const env_ = env.OTEL_DEPLOYMENT_ENV ?? "production";
-    for (const span of spans) {
-      span.resource.attributes["deployment.environment"] = env_;
-    }
-    return spans;
   },
 });
 
