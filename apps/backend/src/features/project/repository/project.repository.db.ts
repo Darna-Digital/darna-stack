@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import { eq } from "drizzle-orm";
 import { db } from "../../../lib/db/client.js";
 import { projects } from "../../../lib/db/schema.js";
-import { tryDb } from "../../../lib/effect/storage.js";
+import { tryDb } from "../../../lib/effect/database.js";
 import type { ProjectRepo } from "./project.repository.js";
 import type { Project, ProjectId } from "../schema/project.model.js";
 

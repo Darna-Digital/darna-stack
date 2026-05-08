@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import { eq } from "drizzle-orm";
 import { db } from "../../../lib/db/client.js";
 import { todos } from "../../../lib/db/schema.js";
-import { tryDb } from "../../../lib/effect/storage.js";
+import { tryDb } from "../../../lib/effect/database.js";
 import type { TodoRepo } from "./todo.repository.js";
 import type { ProjectId } from "../../project/schema/project.model.js";
 import type { Todo, TodoId } from "../schema/todo.model.js";

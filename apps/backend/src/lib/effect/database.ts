@@ -1,6 +1,6 @@
 import { Data, Effect } from "effect";
 
-export class StorageError extends Data.TaggedError("StorageError")<{
+export class DatabaseError extends Data.TaggedError("DatabaseError")<{
   readonly cause: unknown;
 }> {}
 
@@ -9,9 +9,9 @@ const DB_SPAN_ATTRS = { "db.system": "postgresql" } as const;
 export const tryDb = <Result>(name: string, run: () => Promise<Result>): Effect.Effect<Result> =>
   Effect.tryPromise({
     try: run,
-    catch: (cause) => new StorageError({ cause }),
+    catch: (cause) => new DatabaseError({ cause }),
   }).pipe(
-    Effect.tapErrorTag("StorageError", (e) => Effect.logError("Storage error", e.cause)),
+    Effect.tapErrorTag("DatabaseError", (e) => Effect.logError("Database error", e.cause)),
     Effect.orDie,
     Effect.withSpan(name, { attributes: DB_SPAN_ATTRS }),
   );
