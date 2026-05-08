@@ -3,16 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "exports": {
-    "./api": {
-      "types": "./src/api.ts",
-      "default": "./src/api.ts"
-    },
-    "./schemas/todo": {
-      "types": "./src/features/todo/todo.model.ts",
-      "default": "./src/features/todo/todo.model.ts"
-    }
-  },
   "scripts": {
     "dev": "wrangler dev --remote --env-file=.env --port=4000",
     "typecheck": "tsc --noEmit",
