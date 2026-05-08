@@ -1,4 +1,4 @@
-import { HttpApiBuilder, HttpServer, OpenApi } from "@effect/platform";
+import { HttpApi, HttpApiBuilder, HttpRouter, HttpServer, OpenApi } from "@effect/platform";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { Scalar } from "@scalar/hono-api-reference";
@@ -16,9 +16,13 @@ const ApiLive = HttpApiBuilder.api(Api).pipe(
   Layer.provide(TracingLayer),
 );
 
-const { handler: apiHandler } = HttpApiBuilder.toWebHandler(
-  Layer.mergeAll(ApiLive, HttpApiBuilder.Router.Live, HttpServer.layerContext),
+const ApiLayer: Layer.Layer<HttpApi.Api | HttpRouter.HttpRouter.DefaultServices> = Layer.mergeAll(
+  ApiLive,
+  HttpApiBuilder.Router.Live,
+  HttpServer.layerContext,
 );
+
+const { handler: apiHandler } = HttpApiBuilder.toWebHandler(ApiLayer);
 
 const spec = OpenApi.fromApi(Api);
 
