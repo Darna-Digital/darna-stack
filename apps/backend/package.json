@@ -30,7 +30,7 @@
     "@effect/opentelemetry": "^0.63.0",
     "@effect/platform": "^0.96.1",
     "@microlabs/otel-cf-workers": "1.0.0-rc.52",
-    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/resources": "^2.7.1",
     "@opentelemetry/sdk-logs": "^0.217.0",
     "@opentelemetry/sdk-metrics": "^2.7.1",
@@ -48,14 +48,14 @@
     "pg": "^8.20.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260506.1",
+    "@cloudflare/workers-types": "^4.20260508.1",
     "@darna/lint": "workspace:*",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.6.2",
     "@types/pg": "^8.20.0",
     "drizzle-kit": "^0.31.10",
-    "tsx": "^4.7.1",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5",
-    "wrangler": "4.88.0"
+    "wrangler": "4.90.0"
   }
 }

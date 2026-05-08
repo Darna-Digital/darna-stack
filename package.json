@@ -20,7 +20,7 @@
     "deploy:docs": "pnpm --filter @darna/docs run deploy",
     "deploy:web-client": "pnpm --filter web-client run deploy",
     "deps:check": "pnpm outdated -r || true",
-    "deps:update": "pnpm update -r -i --latest",
+    "deps:update": "pnpm update -r --latest",
     "deps:update:safe": "pnpm update -r"
   },
   "engines": {
@@ -28,6 +28,6 @@
   },
   "devDependencies": {
     "@darna/lint": "workspace:*",
-    "prettier": "^3.6.2"
+    "prettier": "^3.8.3"
   }
 }

@@ -15,27 +15,27 @@
   },
   "dependencies": {
     "@types/mdx": "^2.0.13",
-    "fumadocs-core": "^16.8.7",
-    "fumadocs-mdx": "^14.3.2",
-    "fumadocs-ui": "^16.8.7",
-    "mermaid": "^11.4.1",
-    "next": "16.2.5",
+    "fumadocs-core": "^16.8.8",
+    "fumadocs-mdx": "^15.0.0",
+    "fumadocs-ui": "^16.8.8",
+    "mermaid": "^11.14.0",
+    "next": "16.2.6",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
     "@darna/lint": "workspace:*",
-    "@opennextjs/cloudflare": "^1.19.6",
-    "@tailwindcss/postcss": "^4",
+    "@opennextjs/cloudflare": "^1.19.8",
+    "@tailwindcss/postcss": "^4.2.4",
     "@types/mdast": "^4.0.4",
-    "@types/node": "^25.6.0",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/node": "^25.6.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "eslint": "^10.3.0",
-    "eslint-config-next": "16.2.5",
-    "tailwindcss": "^4",
+    "eslint-config-next": "16.2.6",
+    "tailwindcss": "^4.2.4",
     "typescript": "^6.0.3",
-    "wrangler": "^4.88.0"
+    "wrangler": "^4.90.0"
   }
 }
