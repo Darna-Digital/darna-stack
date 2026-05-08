@@ -10,10 +10,16 @@ import type { ReadableSpan, Span as SDKSpan, SpanProcessor } from "@opentelemetr
 import type { Context } from "@opentelemetry/api";
 import { app } from "./server.js";
 import { runWithDb } from "./lib/db/client.js";
+import { runWithR2 } from "./lib/r2/client.js";
 import * as schema from "./lib/db/schema.js";
 
 export interface Env {
   HYPERDRIVE: Hyperdrive;
+  FILES_BUCKET: R2Bucket;
+  R2_ACCOUNT_ID: string;
+  R2_ACCESS_KEY_ID: string;
+  R2_SECRET_ACCESS_KEY: string;
+  R2_FILES_BUCKET_NAME: string;
   OTEL_EXPORTER_OTLP_ENDPOINT: string;
   GRAFANA_OTEL_AUTH_HEADER: string;
   OTEL_DEPLOYMENT_ENV?: string;
@@ -25,7 +31,18 @@ const handler = {
     await client.connect();
     const db = drizzle(client, { schema });
     try {
-      return await runWithDb(db, () => app.fetch(request, env, ctx));
+      return await runWithDb(db, () =>
+        runWithR2(
+          {
+            bucket: env.FILES_BUCKET,
+            accountId: env.R2_ACCOUNT_ID,
+            bucketName: env.R2_FILES_BUCKET_NAME,
+            accessKeyId: env.R2_ACCESS_KEY_ID,
+            secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+          },
+          () => app.fetch(request, env, ctx),
+        ),
+      );
     } finally {
       ctx.waitUntil(client.end());
     }

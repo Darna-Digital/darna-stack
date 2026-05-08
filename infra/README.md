@@ -112,9 +112,11 @@ pnpm --filter @darna/admin   preview      # opennext build + wrangler preview
 pnpm --filter @darna/docs    preview
 ```
 
-`pnpm dev:backend` is `wrangler dev --env-file=.env` — it reads
+`pnpm dev:backend` is `wrangler dev --remote --env-file=.env` — it reads
 `apps/backend/.env` for both wrangler CLI vars (e.g. the Hyperdrive local
-connection string) and Worker bindings.
+connection string) and Worker bindings. `--remote` makes bindings (R2, etc.)
+hit real Cloudflare resources so flows like presigned R2 uploads work
+end-to-end.
 `next dev` reads `apps/<app>/.env.local`.
 
 ---

@@ -7,11 +7,12 @@ import { trace } from "@opentelemetry/api";
 import { Api } from "./api.js";
 import { TodoHandlers } from "./features/todo/http/todo.handlers.js";
 import { ProjectHandlers } from "./features/project/http/project.handlers.js";
+import { FileHandlers } from "./features/file/http/file.handlers.js";
 import { AdminHandlers } from "./features/admin/admin.handlers.js";
 import { TracingLayer } from "./lib/effect/tracing.js";
 
 const ApiLive = HttpApiBuilder.api(Api).pipe(
-  Layer.provide([TodoHandlers, ProjectHandlers, AdminHandlers]),
+  Layer.provide([TodoHandlers, ProjectHandlers, FileHandlers, AdminHandlers]),
   Layer.provide(TracingLayer),
 );
 

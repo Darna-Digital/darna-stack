@@ -84,6 +84,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["file.list"];
+        put?: never;
+        post: operations["file.upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/files/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["file.get"];
+        put?: never;
+        post?: never;
+        delete: operations["file.remove"];
+        options?: never;
+        head?: never;
+        patch: operations["file.rename"];
+        trace?: never;
+    };
+    "/api/files/{id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["file.download"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/files/upload-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["file.requestUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/files/{id}/finalize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["file.finalize"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/me": {
         parameters: {
             query?: never;
@@ -146,6 +226,15 @@ export interface components {
             /** @enum {string} */
             _tag: "ProjectNotFound";
         };
+        FileNotFound: {
+            /**
+             * Format: uuid
+             * @description a Universally Unique Identifier
+             */
+            id: string;
+            /** @enum {string} */
+            _tag: "FileNotFound";
+        };
         Unauthorized: {
             reason: string;
             /** @enum {string} */
@@ -181,10 +270,6 @@ export interface operations {
                          * @description a Universally Unique Identifier
                          */
                         id: string;
-                        /**
-                         * maxLength(200)
-                         * @description a string at most 200 character(s) long
-                         */
                         title: string;
                         done: boolean;
                         createdAt: string;
@@ -235,10 +320,6 @@ export interface operations {
                          * @description a Universally Unique Identifier
                          */
                         id: string;
-                        /**
-                         * maxLength(200)
-                         * @description a string at most 200 character(s) long
-                         */
                         title: string;
                         done: boolean;
                         createdAt: string;
@@ -281,10 +362,6 @@ export interface operations {
                          * @description a Universally Unique Identifier
                          */
                         id: string;
-                        /**
-                         * maxLength(200)
-                         * @description a string at most 200 character(s) long
-                         */
                         title: string;
                         done: boolean;
                         createdAt: string;
@@ -387,10 +464,6 @@ export interface operations {
                          * @description a Universally Unique Identifier
                          */
                         id: string;
-                        /**
-                         * maxLength(200)
-                         * @description a string at most 200 character(s) long
-                         */
                         title: string;
                         done: boolean;
                         createdAt: string;
@@ -439,10 +512,6 @@ export interface operations {
                          * @description a Universally Unique Identifier
                          */
                         id: string;
-                        /**
-                         * maxLength(200)
-                         * @description a string at most 200 character(s) long
-                         */
                         name: string;
                         createdAt: string;
                     }[];
@@ -490,10 +559,6 @@ export interface operations {
                          * @description a Universally Unique Identifier
                          */
                         id: string;
-                        /**
-                         * maxLength(200)
-                         * @description a string at most 200 character(s) long
-                         */
                         name: string;
                         createdAt: string;
                     };
@@ -534,10 +599,6 @@ export interface operations {
                          * @description a Universally Unique Identifier
                          */
                         id: string;
-                        /**
-                         * maxLength(200)
-                         * @description a string at most 200 character(s) long
-                         */
                         name: string;
                         createdAt: string;
                     };
@@ -636,10 +697,6 @@ export interface operations {
                          * @description a Universally Unique Identifier
                          */
                         id: string;
-                        /**
-                         * maxLength(200)
-                         * @description a string at most 200 character(s) long
-                         */
                         name: string;
                         createdAt: string;
                     };
@@ -689,10 +746,6 @@ export interface operations {
                          * @description a Universally Unique Identifier
                          */
                         id: string;
-                        /**
-                         * maxLength(200)
-                         * @description a string at most 200 character(s) long
-                         */
                         title: string;
                         done: boolean;
                         createdAt: string;
@@ -716,6 +769,405 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectNotFound"];
+                };
+            };
+        };
+    };
+    "file.list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: uuid
+                         * @description a Universally Unique Identifier
+                         */
+                        id: string;
+                        name: string;
+                        contentType: string;
+                        size: number;
+                        /** @enum {string} */
+                        status: "pending" | "ready";
+                        uploadedAt: string;
+                    }[];
+                };
+            };
+            /** @description The request did not match the expected schema */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HttpApiDecodeError"];
+                };
+            };
+        };
+    };
+    "file.upload": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description a string at most 255 character(s) long */
+                "x-file-name": string;
+                "content-type"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: uuid
+                         * @description a Universally Unique Identifier
+                         */
+                        id: string;
+                        name: string;
+                        contentType: string;
+                        size: number;
+                        /** @enum {string} */
+                        status: "pending" | "ready";
+                        uploadedAt: string;
+                    };
+                };
+            };
+            /** @description The request did not match the expected schema */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HttpApiDecodeError"];
+                };
+            };
+        };
+    };
+    "file.get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description a Universally Unique Identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: uuid
+                         * @description a Universally Unique Identifier
+                         */
+                        id: string;
+                        name: string;
+                        contentType: string;
+                        size: number;
+                        /** @enum {string} */
+                        status: "pending" | "ready";
+                        uploadedAt: string;
+                    };
+                };
+            };
+            /** @description The request did not match the expected schema */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HttpApiDecodeError"];
+                };
+            };
+            /** @description FileNotFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileNotFound"];
+                };
+            };
+        };
+    };
+    "file.remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description a Universally Unique Identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The request did not match the expected schema */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HttpApiDecodeError"];
+                };
+            };
+            /** @description FileNotFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileNotFound"];
+                };
+            };
+        };
+    };
+    "file.rename": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description a Universally Unique Identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * maxLength(255)
+                     * @description a string at most 255 character(s) long
+                     */
+                    name: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: uuid
+                         * @description a Universally Unique Identifier
+                         */
+                        id: string;
+                        name: string;
+                        contentType: string;
+                        size: number;
+                        /** @enum {string} */
+                        status: "pending" | "ready";
+                        uploadedAt: string;
+                    };
+                };
+            };
+            /** @description The request did not match the expected schema */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HttpApiDecodeError"];
+                };
+            };
+            /** @description FileNotFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileNotFound"];
+                };
+            };
+        };
+    };
+    "file.download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description a Universally Unique Identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            /** @description The request did not match the expected schema */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HttpApiDecodeError"];
+                };
+            };
+            /** @description FileNotFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileNotFound"];
+                };
+            };
+        };
+    };
+    "file.requestUpload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * maxLength(255)
+                     * @description a string at most 255 character(s) long
+                     */
+                    name: string;
+                    /**
+                     * maxLength(255)
+                     * @description a string at most 255 character(s) long
+                     */
+                    contentType: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        meta: {
+                            /**
+                             * Format: uuid
+                             * @description a Universally Unique Identifier
+                             */
+                            id: string;
+                            name: string;
+                            contentType: string;
+                            size: number;
+                            /** @enum {string} */
+                            status: "pending" | "ready";
+                            uploadedAt: string;
+                        };
+                        uploadUrl: string;
+                        expiresAt: string;
+                    };
+                };
+            };
+            /** @description The request did not match the expected schema */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HttpApiDecodeError"];
+                };
+            };
+        };
+    };
+    "file.finalize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description a Universally Unique Identifier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: uuid
+                         * @description a Universally Unique Identifier
+                         */
+                        id: string;
+                        name: string;
+                        contentType: string;
+                        size: number;
+                        /** @enum {string} */
+                        status: "pending" | "ready";
+                        uploadedAt: string;
+                    };
+                };
+            };
+            /** @description The request did not match the expected schema */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HttpApiDecodeError"];
+                };
+            };
+            /** @description FileNotFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileNotFound"];
                 };
             };
         };

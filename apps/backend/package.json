@@ -14,7 +14,7 @@
     }
   },
   "scripts": {
-    "dev": "wrangler dev --env-file=.env --port=4000",
+    "dev": "wrangler dev --remote --env-file=.env --port=4000",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -39,6 +39,7 @@
     "@opentelemetry/sdk-trace-web": "^2.7.1",
     "@opentelemetry/semantic-conventions": "^1.40.0",
     "@scalar/hono-api-reference": "^0.10.14",
+    "aws4fetch": "^1.0.20",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "effect": "^3.21.2",

@@ -4,8 +4,6 @@
   "main": "src/worker.ts",
   "compatibility_date": "2026-01-15",
   "compatibility_flags": ["nodejs_compat"],
-  // Traces are exported by @microlabs/otel-cf-workers (see src/worker.ts), not
-  // by Cloudflare's native trace destinations. Logs still go through CF.
   "observability": {
     "enabled": true,
     "logs": {
@@ -16,6 +14,7 @@
   },
   "routes": [{ "pattern": "darna-stack-backend.darnadigital.com", "custom_domain": true }],
   "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "44ef9aa003384c76965ec29d2624e0d9" }],
+  "r2_buckets": [{ "binding": "FILES_BUCKET", "bucket_name": "darna-stack" }],
   "vars": { "OTEL_DEPLOYMENT_ENV": "production" },
   "env": {
     "staging": {
@@ -31,6 +30,7 @@
           "head_sampling_rate": 1
         }
       },
+      "r2_buckets": [{ "binding": "FILES_BUCKET", "bucket_name": "darna-stack-staging" }],
       "vars": { "OTEL_DEPLOYMENT_ENV": "staging" }
     }
   }
