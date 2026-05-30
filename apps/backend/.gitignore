@@ -1,0 +1,16 @@
+# deps
+node_modules/
+
+# alchemy local cache / artifacts
+.alchemy/
+
+# env
+.env
+.env.local
+
+# build
+dist/
+*.tsbuildinfo
+
+# misc
+.DS_Store

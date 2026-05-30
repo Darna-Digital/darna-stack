@@ -34,3 +34,6 @@ pnpm-debug.log*
 
 # ts
 *.tsbuildinfo
+
+# misc
+local

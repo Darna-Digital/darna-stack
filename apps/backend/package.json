@@ -1,0 +1,22 @@
+{
+  "name": "@darna/backend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "alchemy deploy",
+    "dev": "alchemy dev",
+    "destroy": "alchemy destroy",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@effect/platform-bun": "4.0.0-beta.74",
+    "@effect/platform-node": "4.0.0-beta.74",
+    "alchemy": "2.0.0-beta.45",
+    "effect": "4.0.0-beta.74"
+  },
+  "devDependencies": {
+    "@darna/lint": "workspace:*",
+    "typescript": "^6.0.3"
+  }
+}
