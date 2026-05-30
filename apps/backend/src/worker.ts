@@ -14,7 +14,10 @@ import { Api } from "./api.ts";
 import { GreetingsHandlers } from "./greetings/greetings.handlers.ts";
 import { UsersHandlers } from "./users/users.handlers.ts";
 import { WorkflowsHandlers } from "./workflows/workflows.handlers.ts";
-import { makeAuth } from "./auth/better-auth.ts";
+import { TodoHandlers } from "./todos/http/todo.handlers.ts";
+import { TodosLive } from "./todos/layer/todo.layer.live.ts";
+import { makeAuth, setAuthInstance } from "./auth/better-auth.ts";
+import { AuthenticationLive } from "./auth/auth.middleware.live.ts";
 import GreetingWorkflow, { GreetingWorkflowService } from "./workflows/greeting.workflow.ts";
 import { Database } from "./db/database.ts";
 import { Hyperdrive } from "./db/Db.ts";
@@ -28,6 +31,7 @@ const ApiLive = Layer.mergeAll(
   Layer.provide(GreetingsHandlers),
   Layer.provide(UsersHandlers),
   Layer.provide(WorkflowsHandlers),
+  Layer.provide(TodoHandlers),
 );
 
 export default class Worker extends Cloudflare.Worker<Worker>()(
@@ -86,20 +90,30 @@ export default class Worker extends Cloudflare.Worker<Worker>()(
     const getAuth = yield* Effect.cached(
       Effect.gen(function* () {
         const connectionString = Redacted.value(yield* conn.connectionString);
-        return makeAuth({
+        const auth = makeAuth({
           connectionString,
           secret: authSecret,
           baseURL: authBaseUrl,
           webClientUrl,
           cookieDomain: authCookieDomain,
         });
+        // Expose to the Authentication middleware (which reads it synchronously).
+        setAuthInstance(auth);
+        return auth;
       }),
     );
 
+    const DatabaseLive = Layer.succeed(Database, db);
+
     const apiHandler = yield* HttpRouter.toHttpEffect(
       ApiLive.pipe(
-        Layer.provide(Layer.succeed(Database, db)),
         Layer.provide(Layer.succeed(GreetingWorkflowService, greetingWorkflow)),
+        Layer.provide(AuthenticationLive),
+        Layer.provide(DatabaseLive),
+        // The Todos service is request-scoped: its methods read CurrentUser,
+        // which only exists per-request (provided by the Authentication
+        // middleware). `provideRequest` builds it inside the request scope.
+        HttpRouter.provideRequest(TodosLive.pipe(Layer.provide(DatabaseLive))),
       ),
     );
 
@@ -145,6 +159,10 @@ export default class Worker extends Cloudflare.Worker<Worker>()(
         );
       }
 
+      // Effect HttpApi. Ensure better-auth is built (and registered for the
+      // Authentication middleware, which the todos group uses) before handling.
+      // `getAuth` is cached, so this is a cheap lookup after the first request.
+      yield* getAuth;
       return yield* apiHandler;
     }).pipe(
       // Turn unexpected failures/defects (e.g. better-auth throwing) into a 500

@@ -76,3 +76,18 @@ export const makeAuth = (cfg: AuthConfig) => {
 };
 
 export type AuthInstance = ReturnType<typeof makeAuth>;
+
+// The active instance, set by the Worker once it lazily builds better-auth (it
+// can't be a module singleton — construction needs the runtime Hyperdrive
+// connection string). The Authentication middleware reads it synchronously so
+// the middleware handler stays free of Effect service requirements.
+let active: AuthInstance | null = null;
+
+export const setAuthInstance = (instance: AuthInstance): void => {
+  active = instance;
+};
+
+export const authInstance = (): AuthInstance => {
+  if (!active) throw new Error("better-auth instance not initialized");
+  return active;
+};

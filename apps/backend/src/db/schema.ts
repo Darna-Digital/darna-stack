@@ -11,6 +11,17 @@ export const Users = pgTable("users", {
 export type User = typeof Users.$inferSelect;
 export type NewUser = typeof Users.$inferInsert;
 
+/** App `todos`, owned by a better-auth user (see `user` below). */
+export const todos = pgTable("todos", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  done: boolean("done").notNull().default(false),
+  ownerId: text("owner_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  createdAt: text("created_at").notNull(),
+});
+
 // ---------------------------------------------------------------------------
 // better-auth tables (email/password). Property names are the camelCase field
 // names better-auth's drizzle adapter looks up by; the SQL column names are

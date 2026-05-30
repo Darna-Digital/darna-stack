@@ -4,6 +4,70 @@
  */
 
 export interface paths {
+    "/api/greetings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["greetings.list"];
+        put?: never;
+        post: operations["greetings.create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["users.list"];
+        put?: never;
+        post: operations["users.create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workflows/greeting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["workflows.start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workflows/greeting/{instanceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["workflows.status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/todos": {
         parameters: {
             query?: never;
@@ -11,9 +75,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["todo.list"];
+        get: operations["todos.list"];
         put?: never;
-        post: operations["todo.create"];
+        post: operations["todos.create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -27,154 +91,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["todo.get"];
-        put?: never;
+        get: operations["todos.getById"];
+        put: operations["todos.update"];
         post?: never;
-        delete: operations["todo.remove"];
-        options?: never;
-        head?: never;
-        patch: operations["todo.update"];
-        trace?: never;
-    };
-    "/api/projects": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["project.list"];
-        put?: never;
-        post: operations["project.create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/projects/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["project.get"];
-        put?: never;
-        post?: never;
-        delete: operations["project.remove"];
-        options?: never;
-        head?: never;
-        patch: operations["project.update"];
-        trace?: never;
-    };
-    "/api/projects/{id}/todos": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["project.listTodos"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/files": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["file.list"];
-        put?: never;
-        post: operations["file.upload"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/files/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["file.get"];
-        put?: never;
-        post?: never;
-        delete: operations["file.remove"];
-        options?: never;
-        head?: never;
-        patch: operations["file.rename"];
-        trace?: never;
-    };
-    "/api/files/{id}/content": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["file.download"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/files/upload-url": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["file.requestUpload"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/files/{id}/finalize": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["file.finalize"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["admin.me"];
-        put?: never;
-        post?: never;
-        delete?: never;
+        delete: operations["todos.remove"];
         options?: never;
         head?: never;
         patch?: never;
@@ -184,61 +104,18 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** @description The request did not match the expected schema */
-        HttpApiDecodeError: {
-            issues: components["schemas"]["Issue"][];
-            message: string;
+        StorageError: {
             /** @enum {string} */
-            _tag: "HttpApiDecodeError";
+            _tag: "StorageError";
         };
-        /** @description Represents an error encountered while parsing a value to match the schema */
-        Issue: {
-            /**
-             * @description The tag identifying the type of parse issue
-             * @enum {string}
-             */
-            _tag: "Pointer" | "Unexpected" | "Missing" | "Composite" | "Refinement" | "Transformation" | "Type" | "Forbidden";
-            /** @description The path to the property where the issue occurred */
-            path: components["schemas"]["PropertyKey"][];
-            /** @description A descriptive message explaining the issue */
-            message: string;
-        };
-        PropertyKey: string | number | {
+        NotAuthenticated: {
             /** @enum {string} */
-            _tag: "symbol";
-            key: string;
+            _tag: "NotAuthenticated";
         };
         TodoNotFound: {
-            /**
-             * Format: uuid
-             * @description a Universally Unique Identifier
-             */
-            id: string;
             /** @enum {string} */
             _tag: "TodoNotFound";
-        };
-        ProjectNotFound: {
-            /**
-             * Format: uuid
-             * @description a Universally Unique Identifier
-             */
             id: string;
-            /** @enum {string} */
-            _tag: "ProjectNotFound";
-        };
-        FileNotFound: {
-            /**
-             * Format: uuid
-             * @description a Universally Unique Identifier
-             */
-            id: string;
-            /** @enum {string} */
-            _tag: "FileNotFound";
-        };
-        Unauthorized: {
-            reason: string;
-            /** @enum {string} */
-            _tag: "Unauthorized";
         };
     };
     responses: never;
@@ -249,7 +126,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    "todo.list": {
+    "greetings.list": {
         parameters: {
             query?: never;
             header?: never;
@@ -265,30 +142,14 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /**
-                         * Format: uuid
-                         * @description a Universally Unique Identifier
-                         */
-                        id: string;
-                        title: string;
-                        done: boolean;
-                        createdAt: string;
-                        projectId: string | null;
+                        id: (number | "NaN" | "Infinity" | "-Infinity") | ("Infinity" | "-Infinity" | "NaN");
+                        text: string;
                     }[];
                 };
             };
-            /** @description The request did not match the expected schema */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HttpApiDecodeError"];
-                };
-            };
         };
     };
-    "todo.create": {
+    "greetings.create": {
         parameters: {
             query?: never;
             header?: never;
@@ -298,156 +159,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    /**
-                     * maxLength(200)
-                     * @description a string at most 200 character(s) long
-                     */
-                    title: string;
-                    projectId?: string | null;
-                };
-            };
-        };
-        responses: {
-            /** @description Success */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * Format: uuid
-                         * @description a Universally Unique Identifier
-                         */
-                        id: string;
-                        title: string;
-                        done: boolean;
-                        createdAt: string;
-                        projectId: string | null;
-                    };
-                };
-            };
-            /** @description The request did not match the expected schema */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HttpApiDecodeError"];
-                };
-            };
-        };
-    };
-    "todo.get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description a Universally Unique Identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * Format: uuid
-                         * @description a Universally Unique Identifier
-                         */
-                        id: string;
-                        title: string;
-                        done: boolean;
-                        createdAt: string;
-                        projectId: string | null;
-                    };
-                };
-            };
-            /** @description The request did not match the expected schema */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HttpApiDecodeError"];
-                };
-            };
-            /** @description TodoNotFound */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TodoNotFound"];
-                };
-            };
-        };
-    };
-    "todo.remove": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description a Universally Unique Identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description The request did not match the expected schema */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HttpApiDecodeError"];
-                };
-            };
-            /** @description TodoNotFound */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TodoNotFound"];
-                };
-            };
-        };
-    };
-    "todo.update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description a Universally Unique Identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /**
-                     * maxLength(200)
-                     * @description a string at most 200 character(s) long
-                     */
-                    title?: string;
-                    done?: boolean;
-                    projectId?: string | null;
+                    text: string;
                 };
             };
         };
@@ -459,39 +171,14 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /**
-                         * Format: uuid
-                         * @description a Universally Unique Identifier
-                         */
-                        id: string;
-                        title: string;
-                        done: boolean;
-                        createdAt: string;
-                        projectId: string | null;
+                        id: (number | "NaN" | "Infinity" | "-Infinity") | ("Infinity" | "-Infinity" | "NaN");
+                        text: string;
                     };
-                };
-            };
-            /** @description The request did not match the expected schema */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HttpApiDecodeError"];
-                };
-            };
-            /** @description TodoNotFound */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TodoNotFound"];
                 };
             };
         };
     };
-    "project.list": {
+    "users.list": {
         parameters: {
             query?: never;
             header?: never;
@@ -507,28 +194,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /**
-                         * Format: uuid
-                         * @description a Universally Unique Identifier
-                         */
-                        id: string;
+                        id: (number | "NaN" | "Infinity" | "-Infinity") | ("Infinity" | "-Infinity" | "NaN");
+                        email: string;
                         name: string;
-                        createdAt: string;
                     }[];
                 };
             };
-            /** @description The request did not match the expected schema */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HttpApiDecodeError"];
-                };
-            };
         };
     };
-    "project.create": {
+    "users.create": {
         parameters: {
             query?: never;
             header?: never;
@@ -538,440 +212,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    /**
-                     * maxLength(200)
-                     * @description a string at most 200 character(s) long
-                     */
-                    name: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Success */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * Format: uuid
-                         * @description a Universally Unique Identifier
-                         */
-                        id: string;
-                        name: string;
-                        createdAt: string;
-                    };
-                };
-            };
-            /** @description The request did not match the expected schema */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HttpApiDecodeError"];
-                };
-            };
-        };
-    };
-    "project.get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description a Universally Unique Identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * Format: uuid
-                         * @description a Universally Unique Identifier
-                         */
-                        id: string;
-                        name: string;
-                        createdAt: string;
-                    };
-                };
-            };
-            /** @description The request did not match the expected schema */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HttpApiDecodeError"];
-                };
-            };
-            /** @description ProjectNotFound */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProjectNotFound"];
-                };
-            };
-        };
-    };
-    "project.remove": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description a Universally Unique Identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description The request did not match the expected schema */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HttpApiDecodeError"];
-                };
-            };
-            /** @description ProjectNotFound */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProjectNotFound"];
-                };
-            };
-        };
-    };
-    "project.update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description a Universally Unique Identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /**
-                     * maxLength(200)
-                     * @description a string at most 200 character(s) long
-                     */
-                    name?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * Format: uuid
-                         * @description a Universally Unique Identifier
-                         */
-                        id: string;
-                        name: string;
-                        createdAt: string;
-                    };
-                };
-            };
-            /** @description The request did not match the expected schema */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HttpApiDecodeError"];
-                };
-            };
-            /** @description ProjectNotFound */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProjectNotFound"];
-                };
-            };
-        };
-    };
-    "project.listTodos": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description a Universally Unique Identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * Format: uuid
-                         * @description a Universally Unique Identifier
-                         */
-                        id: string;
-                        title: string;
-                        done: boolean;
-                        createdAt: string;
-                        projectId: string | null;
-                    }[];
-                };
-            };
-            /** @description The request did not match the expected schema */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HttpApiDecodeError"];
-                };
-            };
-            /** @description ProjectNotFound */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProjectNotFound"];
-                };
-            };
-        };
-    };
-    "file.list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * Format: uuid
-                         * @description a Universally Unique Identifier
-                         */
-                        id: string;
-                        name: string;
-                        contentType: string;
-                        size: number;
-                        /** @enum {string} */
-                        status: "pending" | "ready";
-                        uploadedAt: string;
-                    }[];
-                };
-            };
-            /** @description The request did not match the expected schema */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HttpApiDecodeError"];
-                };
-            };
-        };
-    };
-    "file.upload": {
-        parameters: {
-            query?: never;
-            header: {
-                /** @description a string at most 255 character(s) long */
-                "x-file-name": string;
-                "content-type"?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/octet-stream": string;
-            };
-        };
-        responses: {
-            /** @description Success */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * Format: uuid
-                         * @description a Universally Unique Identifier
-                         */
-                        id: string;
-                        name: string;
-                        contentType: string;
-                        size: number;
-                        /** @enum {string} */
-                        status: "pending" | "ready";
-                        uploadedAt: string;
-                    };
-                };
-            };
-            /** @description The request did not match the expected schema */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HttpApiDecodeError"];
-                };
-            };
-        };
-    };
-    "file.get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description a Universally Unique Identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * Format: uuid
-                         * @description a Universally Unique Identifier
-                         */
-                        id: string;
-                        name: string;
-                        contentType: string;
-                        size: number;
-                        /** @enum {string} */
-                        status: "pending" | "ready";
-                        uploadedAt: string;
-                    };
-                };
-            };
-            /** @description The request did not match the expected schema */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HttpApiDecodeError"];
-                };
-            };
-            /** @description FileNotFound */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FileNotFound"];
-                };
-            };
-        };
-    };
-    "file.remove": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description a Universally Unique Identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description The request did not match the expected schema */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HttpApiDecodeError"];
-                };
-            };
-            /** @description FileNotFound */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FileNotFound"];
-                };
-            };
-        };
-    };
-    "file.rename": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description a Universally Unique Identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /**
-                     * maxLength(255)
-                     * @description a string at most 255 character(s) long
-                     */
+                    email: string;
                     name: string;
                 };
             };
@@ -984,82 +225,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /**
-                         * Format: uuid
-                         * @description a Universally Unique Identifier
-                         */
-                        id: string;
+                        id: (number | "NaN" | "Infinity" | "-Infinity") | ("Infinity" | "-Infinity" | "NaN");
+                        email: string;
                         name: string;
-                        contentType: string;
-                        size: number;
-                        /** @enum {string} */
-                        status: "pending" | "ready";
-                        uploadedAt: string;
                     };
                 };
             };
-            /** @description The request did not match the expected schema */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HttpApiDecodeError"];
-                };
-            };
-            /** @description FileNotFound */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FileNotFound"];
-                };
-            };
         };
     };
-    "file.download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description a Universally Unique Identifier */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/octet-stream": string;
-                };
-            };
-            /** @description The request did not match the expected schema */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HttpApiDecodeError"];
-                };
-            };
-            /** @description FileNotFound */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FileNotFound"];
-                };
-            };
-        };
-    };
-    "file.requestUpload": {
+    "workflows.start": {
         parameters: {
             query?: never;
             header?: never;
@@ -1069,63 +243,30 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    /**
-                     * maxLength(255)
-                     * @description a string at most 255 character(s) long
-                     */
                     name: string;
-                    /**
-                     * maxLength(255)
-                     * @description a string at most 255 character(s) long
-                     */
-                    contentType: string;
                 };
             };
         };
         responses: {
             /** @description Success */
-            201: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        meta: {
-                            /**
-                             * Format: uuid
-                             * @description a Universally Unique Identifier
-                             */
-                            id: string;
-                            name: string;
-                            contentType: string;
-                            size: number;
-                            /** @enum {string} */
-                            status: "pending" | "ready";
-                            uploadedAt: string;
-                        };
-                        uploadUrl: string;
-                        expiresAt: string;
+                        instanceId: string;
                     };
-                };
-            };
-            /** @description The request did not match the expected schema */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HttpApiDecodeError"];
                 };
             };
         };
     };
-    "file.finalize": {
+    "workflows.status": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description a Universally Unique Identifier */
-                id: string;
+                instanceId: string;
             };
             cookie?: never;
         };
@@ -1138,41 +279,18 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /**
-                         * Format: uuid
-                         * @description a Universally Unique Identifier
-                         */
-                        id: string;
-                        name: string;
-                        contentType: string;
-                        size: number;
-                        /** @enum {string} */
-                        status: "pending" | "ready";
-                        uploadedAt: string;
+                        status: string;
+                        output: {
+                            greeting: string;
+                            steps: (number | "NaN" | "Infinity" | "-Infinity") | ("Infinity" | "-Infinity" | "NaN");
+                        } | null;
+                        error: string | null;
                     };
-                };
-            };
-            /** @description The request did not match the expected schema */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HttpApiDecodeError"];
-                };
-            };
-            /** @description FileNotFound */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FileNotFound"];
                 };
             };
         };
     };
-    "admin.me": {
+    "todos.list": {
         parameters: {
             query?: never;
             header?: never;
@@ -1188,29 +306,244 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        sub: string;
-                        org_id?: string;
-                        role?: string;
-                        permissions?: string[];
-                    };
+                        id: string;
+                        title: string;
+                        done: boolean;
+                        ownerId: string;
+                        createdAt: string;
+                    }[];
                 };
             };
-            /** @description The request did not match the expected schema */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HttpApiDecodeError"];
-                };
-            };
-            /** @description Unauthorized */
+            /** @description NotAuthenticated */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Unauthorized"];
+                    "application/json": components["schemas"]["NotAuthenticated"];
+                };
+            };
+            /** @description StorageError */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageError"];
+                };
+            };
+        };
+    };
+    "todos.create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    title: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        title: string;
+                        done: boolean;
+                        ownerId: string;
+                        createdAt: string;
+                    };
+                };
+            };
+            /** @description NotAuthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotAuthenticated"];
+                };
+            };
+            /** @description StorageError */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageError"];
+                };
+            };
+        };
+    };
+    "todos.getById": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        title: string;
+                        done: boolean;
+                        ownerId: string;
+                        createdAt: string;
+                    };
+                };
+            };
+            /** @description NotAuthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotAuthenticated"];
+                };
+            };
+            /** @description TodoNotFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TodoNotFound"];
+                };
+            };
+            /** @description StorageError */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageError"];
+                };
+            };
+        };
+    };
+    "todos.update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    title?: string;
+                    done?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        title: string;
+                        done: boolean;
+                        ownerId: string;
+                        createdAt: string;
+                    };
+                };
+            };
+            /** @description NotAuthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotAuthenticated"];
+                };
+            };
+            /** @description TodoNotFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TodoNotFound"];
+                };
+            };
+            /** @description StorageError */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageError"];
+                };
+            };
+        };
+    };
+    "todos.remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description <No Content> */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description NotAuthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotAuthenticated"];
+                };
+            };
+            /** @description TodoNotFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TodoNotFound"];
+                };
+            };
+            /** @description StorageError */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageError"];
                 };
             };
         };

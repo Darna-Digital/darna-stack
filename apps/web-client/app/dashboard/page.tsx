@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { signOut, useSession } from "@/lib/auth-client";
@@ -81,7 +82,10 @@ export default function DashboardPage() {
             )}
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="gap-2">
+          <Button asChild>
+            <Link href="/todos">Your todos</Link>
+          </Button>
           <Button variant="outline" onClick={onSignOut}>
             Sign out
           </Button>

@@ -7,7 +7,10 @@
     "deploy": "alchemy deploy",
     "dev": "alchemy dev",
     "destroy": "alchemy destroy",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "openapi": "bun run scripts/gen-openapi.ts"
   },
   "dependencies": {
     "@effect/opentelemetry": "4.0.0-beta.74",
@@ -30,8 +33,10 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260515.1",
     "@darna/lint": "workspace:*",
+    "@effect/vitest": "4.0.0-beta.74",
     "@types/pg": "^8.20.0",
     "drizzle-kit": "1.0.0-rc.1",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.6"
   }
 }
