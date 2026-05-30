@@ -11,8 +11,14 @@ export default Alchemy.Stack(
   Effect.gen(function* () {
     const bucket = yield* Cloudflare.R2Bucket("Bucket");
 
+    const worker = yield* Cloudflare.Worker("Api", {
+      main: "./src/worker.ts",
+      url: true,
+    });
+
     return {
       bucketName: bucket.bucketName,
+      url: worker.url,
     };
   }),
 );
