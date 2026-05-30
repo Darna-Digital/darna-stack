@@ -23,22 +23,34 @@ importers:
       '@effect/platform-node':
         specifier: 4.0.0-beta.74
         version: 4.0.0-beta.74(effect@4.0.0-beta.74)(ioredis@5.11.0)
-      '@scalar/hono-api-reference':
-        specifier: ^0.10.16
-        version: 0.10.16(hono@4.12.18)
+      '@effect/sql-pg':
+        specifier: 4.0.0-beta.74
+        version: 4.0.0-beta.74(effect@4.0.0-beta.74)
       alchemy:
         specifier: 2.0.0-beta.45
-        version: 2.0.0-beta.45(@effect/platform-bun@4.0.0-beta.74(effect@4.0.0-beta.74))(@effect/platform-node@4.0.0-beta.74(effect@4.0.0-beta.74)(ioredis@5.11.0))(@types/node@25.8.0)(@types/react@19.2.14)(effect@4.0.0-beta.74)(vite@8.0.10(@types/node@25.8.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.16.9)(tsx@4.22.0)(yaml@2.9.0))(vitest@4.1.6(@opentelemetry/api@1.9.1)(@types/node@25.8.0)(vite@8.0.10(@types/node@25.8.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.16.9)(tsx@4.22.0)(yaml@2.9.0)))(workerd@1.20260526.1)(ws@8.21.0)
+        version: 2.0.0-beta.45(@effect/platform-bun@4.0.0-beta.74(effect@4.0.0-beta.74))(@effect/platform-node@4.0.0-beta.74(effect@4.0.0-beta.74)(ioredis@5.11.0))(@effect/sql-pg@4.0.0-beta.74(effect@4.0.0-beta.74))(@types/node@25.8.0)(@types/react@19.2.14)(drizzle-kit@1.0.0-rc.1)(drizzle-orm@1.0.0-rc.1(@cloudflare/workers-types@4.20260515.1)(@effect/sql-pg@4.0.0-beta.74(effect@4.0.0-beta.74))(@libsql/client@0.17.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(effect@4.0.0-beta.74)(mysql2@3.22.4(@types/node@25.8.0))(pg@8.20.0)(zod@4.4.3))(effect@4.0.0-beta.74)(vite@8.0.10(@types/node@25.8.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.16.9)(tsx@4.22.0)(yaml@2.9.0))(vitest@4.1.6(@opentelemetry/api@1.9.1)(@types/node@25.8.0)(vite@8.0.10(@types/node@25.8.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.16.9)(tsx@4.22.0)(yaml@2.9.0)))(workerd@1.20260526.1)(ws@8.21.0)
+      drizzle-orm:
+        specifier: 1.0.0-rc.1
+        version: 1.0.0-rc.1(@cloudflare/workers-types@4.20260515.1)(@effect/sql-pg@4.0.0-beta.74(effect@4.0.0-beta.74))(@libsql/client@0.17.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(effect@4.0.0-beta.74)(mysql2@3.22.4(@types/node@25.8.0))(pg@8.20.0)(zod@4.4.3)
       effect:
         specifier: 4.0.0-beta.74
         version: 4.0.0-beta.74
-      hono:
-        specifier: ^4.12.18
-        version: 4.12.18
+      pg:
+        specifier: ^8.20.0
+        version: 8.20.0
     devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20260515.1
+        version: 4.20260515.1
       '@darna/lint':
         specifier: workspace:*
         version: link:../../packages/lint
+      '@types/pg':
+        specifier: ^8.20.0
+        version: 8.20.0
+      drizzle-kit:
+        specifier: 1.0.0-rc.1
+        version: 1.0.0-rc.1
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -837,6 +849,9 @@ packages:
   '@drizzle-team/brocli@0.10.2':
     resolution: {integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==}
 
+  '@drizzle-team/brocli@0.11.0':
+    resolution: {integrity: sha512-hD3pekGiPg0WPCCGAZmusBBJsDqGUR66Y452YgQsZOnkdQ7ViEPKuyP4huUGEZQefp8g34RRodXYmJ2TbCH+tg==}
+
   '@ecies/ciphers@0.2.6':
     resolution: {integrity: sha512-patgsRPKGkhhoBjETV4XxD0En4ui5fbX0hzayqI3M8tvNMGUoUvmyYAIWwlxBc1KX5cturfqByYdj5bYGRpN9g==}
     engines: {bun: '>=1', deno: '>=2.7.10', node: '>=16'}
@@ -879,6 +894,11 @@ packages:
     resolution: {integrity: sha512-cjB1QZZYEP8JXCFNGvBLVi0T6YUBQTmOVEUA3SDbiQ6RUO+p6CE3eyD2vMWmrz5nE8yY5QSAuOV9v0boEcUv+A==}
     peerDependencies:
       effect: ^3.21.2
+
+  '@effect/sql-pg@4.0.0-beta.74':
+    resolution: {integrity: sha512-F1keL+vtp+d2HG7LQQ/WhJx4ezCrNy29T0HLbGPPvTeJTIi5/8fe2frh4WF55p6K3oi8jhkfe3fSH2Lcx0RjRw==}
+    peerDependencies:
+      effect: ^4.0.0-beta.74
 
   '@effect/vitest@4.0.0-beta.74':
     resolution: {integrity: sha512-+SFcjtbboJdWA+cP7JFW7Gp1PL7vj7uqvBnh9xY7JFU8VMsrHN5mblsqE7l7+ZFGpJvBGLgjGrhfe8QZ7f5vgg==}
@@ -1905,6 +1925,10 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
+
+  '@js-temporal/polyfill@0.5.1':
+    resolution: {integrity: sha512-hloP58zRVCRSpgDxmqCWJNlizAlUgJFqG2ypq79DCvyv9tHjRYMDOcPFjzfl/A1/YxDvRCZz8wvZvmapQnKwFQ==}
+    engines: {node: '>=12'}
 
   '@libsql/client@0.17.3':
     resolution: {integrity: sha512-HXk9wiAoJbKFbyBH4O+aEhN6ir5ERXuXvwE5OD2eR4/5RUa3Pw/8L9zrnVdU+iNJitRvisPWaIwmhkO3bH7giA==}
@@ -4294,6 +4318,10 @@ packages:
     resolution: {integrity: sha512-7OZcmQUrdGI+DUNNsKBn1aW8qSoKuTH7d0mYgSP8bAzdFzKoovxEFnoGQp2dVs82EOJeYycqRtciopszwUf8bw==}
     hasBin: true
 
+  drizzle-kit@1.0.0-rc.1:
+    resolution: {integrity: sha512-eDvXzRhke7OwvmN7AciGOU1E2y17MKNhghGciyw1RbmmkuD/2KDXLn3rFRZcDBmfj6CQSEnyvbU+7Fqrn2JQyA==}
+    hasBin: true
+
   drizzle-orm@0.45.2:
     resolution: {integrity: sha512-kY0BSaTNYWnoDMVoyY8uxmyHjpJW1geOmBMdSSicKo9CIIWkSxMIj2rkeSR51b8KAPB7m+qysjuHme5nKP+E5Q==}
     peerDependencies:
@@ -4384,6 +4412,122 @@ packages:
       sql.js:
         optional: true
       sqlite3:
+        optional: true
+
+  drizzle-orm@1.0.0-rc.1:
+    resolution: {integrity: sha512-jGCqAgxpz+OSHP2jQGooUHBxnFMTYl0TTRSfULBl52VNf7CtyNRnazUi+VdbSxvJrDP2lnIsmUh5O+HhKeSJCg==}
+    peerDependencies:
+      '@aws-sdk/client-rds-data': '>=3'
+      '@cloudflare/workers-types': '>=4'
+      '@effect/sql-pg': '>=4.0.0-beta.58 || >=4.0.0'
+      '@electric-sql/pglite': '>=0.2.0'
+      '@libsql/client': '>=0.10.0'
+      '@libsql/client-wasm': '>=0.10.0'
+      '@neondatabase/serverless': '>=0.10.0'
+      '@op-engineering/op-sqlite': '>=2'
+      '@opentelemetry/api': ^1.4.1
+      '@planetscale/database': '>=1.13'
+      '@sinclair/typebox': '>=0.34.8'
+      '@sqlitecloud/drivers': '>=1.0.653'
+      '@tidbcloud/serverless': '*'
+      '@tursodatabase/database': '>=0.2.1'
+      '@tursodatabase/database-common': '>=0.2.1'
+      '@tursodatabase/database-wasm': '>=0.2.1'
+      '@types/better-sqlite3': '*'
+      '@types/mssql': ^9.1.4
+      '@types/pg': '*'
+      '@types/sql.js': '*'
+      '@upstash/redis': '>=1.34.7'
+      '@vercel/postgres': '>=0.8.0'
+      '@xata.io/client': '*'
+      arktype: '>=2.0.0'
+      better-sqlite3: '>=9.3.0'
+      bun-types: '*'
+      effect: '>=4.0.0-beta.58 || >=4.0.0'
+      expo-sqlite: '>=14.0.0'
+      mssql: ^11.0.1
+      mysql2: '>=2'
+      pg: '>=8'
+      postgres: '>=3'
+      sql.js: '>=1'
+      sqlite3: '>=5'
+      typebox: '>=1.0.0'
+      valibot: '>=1.0.0-beta.7'
+      zod: ^3.25.0 || ^4.0.0
+    peerDependenciesMeta:
+      '@aws-sdk/client-rds-data':
+        optional: true
+      '@cloudflare/workers-types':
+        optional: true
+      '@effect/sql-pg':
+        optional: true
+      '@electric-sql/pglite':
+        optional: true
+      '@libsql/client':
+        optional: true
+      '@libsql/client-wasm':
+        optional: true
+      '@neondatabase/serverless':
+        optional: true
+      '@op-engineering/op-sqlite':
+        optional: true
+      '@opentelemetry/api':
+        optional: true
+      '@planetscale/database':
+        optional: true
+      '@sinclair/typebox':
+        optional: true
+      '@sqlitecloud/drivers':
+        optional: true
+      '@tidbcloud/serverless':
+        optional: true
+      '@tursodatabase/database':
+        optional: true
+      '@tursodatabase/database-common':
+        optional: true
+      '@tursodatabase/database-wasm':
+        optional: true
+      '@types/better-sqlite3':
+        optional: true
+      '@types/mssql':
+        optional: true
+      '@types/pg':
+        optional: true
+      '@types/sql.js':
+        optional: true
+      '@upstash/redis':
+        optional: true
+      '@vercel/postgres':
+        optional: true
+      '@xata.io/client':
+        optional: true
+      arktype:
+        optional: true
+      better-sqlite3:
+        optional: true
+      bun-types:
+        optional: true
+      effect:
+        optional: true
+      expo-sqlite:
+        optional: true
+      mssql:
+        optional: true
+      mysql2:
+        optional: true
+      pg:
+        optional: true
+      postgres:
+        optional: true
+      sql.js:
+        optional: true
+      sqlite3:
+        optional: true
+      typebox:
+        optional: true
+      valibot:
+        optional: true
+      zod:
         optional: true
 
   dunder-proto@1.0.1:
@@ -5352,6 +5496,9 @@ packages:
     resolution: {integrity: sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA==}
     hasBin: true
 
+  jsbi@4.3.2:
+    resolution: {integrity: sha512-9fqMSQbhJykSeii05nxKl4m6Eqn2P6rOlYiS+C5Dr/HPIU/7yZxu5qzbs40tgaFORiw2Amd0mirjxatXYMkIew==}
+
   jsesc@3.1.0:
     resolution: {integrity: sha512-/sM3dO2FOzXjKQhJuo0Q173wf2KOo8t4I8vHy6lF9poUp7bKT0/NHE8fPX23PwfhnykfqnC2xRxOnVw5XuGIaA==}
     engines: {node: '>=6'}
@@ -5967,6 +6114,9 @@ packages:
   obliterator@1.6.1:
     resolution: {integrity: sha512-9WXswnqINnnhOG/5SLimUlzuU1hFJUc8zkwyD59Sd+dPOMf05PmnYG/d6Q7HZ+KmgkZJa1PxRso6QdM3sTNHig==}
 
+  obuf@1.1.2:
+    resolution: {integrity: sha512-PX1wu0AmAdPqOL1mWhqmlOd8kOIZQwGZw6rh7uby9fTc5lhaOWFLX3I6R1hrF9k3zUY40e6igsLGkDXK92LJNg==}
+
   obug@2.1.1:
     resolution: {integrity: sha512-uTqF9MuPraAQ+IsnPf366RG4cP9RtUi7MLO1N3KEc+wb0a6yKpeL0lmk2IB1jY5KHPAlTc6T/JRdC/YqxHNwkQ==}
 
@@ -6093,9 +6243,18 @@ packages:
   pg-connection-string@2.12.0:
     resolution: {integrity: sha512-U7qg+bpswf3Cs5xLzRqbXbQl85ng0mfSV/J0nnA31MCLgvEaAo7CIhmeyrmJpOr7o+zm0rXK+hNnT5l9RHkCkQ==}
 
+  pg-cursor@2.20.0:
+    resolution: {integrity: sha512-HP/EbUafheaUOs7DxlG6tda/rhmsX2hCTJJJ+gCnhljGyNEs6pBHddbNuomlW3DqEhP3zYD+GqBWkYnJPIZ4tA==}
+    peerDependencies:
+      pg: ^8
+
   pg-int8@1.0.1:
     resolution: {integrity: sha512-WCtabS6t3c8SkpDBUlb1kjOs7l66xsGdKpIPZsg4wR+B3+u9UAum2odSsF9tnvxg80h4ZxLWMy4pRjOsFIqQpw==}
     engines: {node: '>=4.0.0'}
+
+  pg-numeric@1.0.2:
+    resolution: {integrity: sha512-BM/Thnrw5jm2kKLE5uJkXqqExRUY/toLHda65XgFTBTFYZyopbKjBe29Ii3RbkvlsMoFwD+tHeGaCjjv0gHlyw==}
+    engines: {node: '>=4'}
 
   pg-pool@3.13.0:
     resolution: {integrity: sha512-gB+R+Xud1gLFuRD/QgOIgGOBE2KCQPaPwkzBBGC9oG69pHTkhQeIuejVIk3/cnDyX39av2AxomQiyPT13WKHQA==}
@@ -6108,6 +6267,10 @@ packages:
   pg-types@2.2.0:
     resolution: {integrity: sha512-qTAAlrEsl8s4OiEQY69wDvcMIdQN6wdz5ojQiOy6YRMuynxenON0O5oCpJI6lshc6scgAY8qvJ2On/p+CXY0GA==}
     engines: {node: '>=4'}
+
+  pg-types@4.1.0:
+    resolution: {integrity: sha512-o2XFanIMy/3+mThw69O8d4n1E5zsLhdO+OPqswezu7Z5ekP4hYDqlDjlmOpYMbzY2Br0ufCwJLdDIXeNVwcWFg==}
+    engines: {node: '>=10'}
 
   pg@8.20.0:
     resolution: {integrity: sha512-ldhMxz2r8fl/6QkXnBD3CR9/xg694oT6DZQ2s6c/RI28OjtSOpxnPrUCGOBJ46RCUxcWdx3p6kw/xnDHjKvaRA==}
@@ -6158,17 +6321,36 @@ packages:
     resolution: {integrity: sha512-VpZrUqU5A69eQyW2c5CA1jtLecCsN2U/bD6VilrFDWq5+5UIEVO7nazS3TEcHf1zuPYO/sqGvUvW62g86RXZuA==}
     engines: {node: '>=4'}
 
+  postgres-array@3.0.4:
+    resolution: {integrity: sha512-nAUSGfSDGOaOAEGwqsRY27GPOea7CNipJPOA7lPbdEpx5Kg3qzdP0AaWC5MlhTWV9s4hFX39nomVZ+C4tnGOJQ==}
+    engines: {node: '>=12'}
+
   postgres-bytea@1.0.1:
     resolution: {integrity: sha512-5+5HqXnsZPE65IJZSMkZtURARZelel2oXUEO8rH83VS/hxH5vv1uHquPg5wZs8yMAfdv971IU+kcPUczi7NVBQ==}
     engines: {node: '>=0.10.0'}
+
+  postgres-bytea@3.0.0:
+    resolution: {integrity: sha512-CNd4jim9RFPkObHSjVHlVrxoVQXz7quwNFpz7RY1okNNme49+sVyiTvTRobiLV548Hx/hb1BG+iE7h9493WzFw==}
+    engines: {node: '>= 6'}
 
   postgres-date@1.0.7:
     resolution: {integrity: sha512-suDmjLVQg78nMK2UZ454hAG+OAW+HQPZ6n++TNDUX+L0+uUlLywnoxJKDou51Zm+zTCjrCl0Nq6J9C5hP9vK/Q==}
     engines: {node: '>=0.10.0'}
 
+  postgres-date@2.1.0:
+    resolution: {integrity: sha512-K7Juri8gtgXVcDfZttFKVmhglp7epKb1K4pgrkLxehjqkrgPhfG6OO8LHLkfaqkbpjNRnra018XwAr1yQFWGcA==}
+    engines: {node: '>=12'}
+
   postgres-interval@1.2.0:
     resolution: {integrity: sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ==}
     engines: {node: '>=0.10.0'}
+
+  postgres-interval@3.0.0:
+    resolution: {integrity: sha512-BSNDnbyZCXSxgA+1f5UU2GmwhoI0aU5yMxRGO8CdFEcY2BQF9xm/7MqKnYoM1nJDk8nONNWDk9WeSmePFhQdlw==}
+    engines: {node: '>=12'}
+
+  postgres-range@1.1.4:
+    resolution: {integrity: sha512-i/hbxIE9803Alj/6ytL7UHQxRvZkI9O4Sy+J3HGc4F4oo/2eQAjTSNJ0bfxyse3bH0nuVesCk+3IRLaMtG3H6w==}
 
   prelude-ls@1.2.1:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
@@ -8234,6 +8416,8 @@ snapshots:
 
   '@drizzle-team/brocli@0.10.2': {}
 
+  '@drizzle-team/brocli@0.11.0': {}
+
   '@ecies/ciphers@0.2.6(@noble/ciphers@1.3.0)':
     dependencies:
       '@noble/ciphers': 1.3.0
@@ -8285,6 +8469,17 @@ snapshots:
       find-my-way-ts: 0.1.6
       msgpackr: 1.11.12
       multipasta: 0.2.7
+
+  '@effect/sql-pg@4.0.0-beta.74(effect@4.0.0-beta.74)':
+    dependencies:
+      effect: 4.0.0-beta.74
+      pg: 8.20.0
+      pg-connection-string: 2.12.0
+      pg-cursor: 2.20.0(pg@8.20.0)
+      pg-pool: 3.13.0(pg@8.20.0)
+      pg-types: 4.1.0
+    transitivePeerDependencies:
+      - pg-native
 
   '@effect/vitest@4.0.0-beta.74(effect@4.0.0-beta.74)(vitest@4.1.6(@opentelemetry/api@1.9.1)(@types/node@25.8.0)(vite@8.0.10(@types/node@25.8.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.16.9)(tsx@4.22.0)(yaml@2.9.0)))':
     dependencies:
@@ -8901,6 +9096,10 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@js-temporal/polyfill@0.5.1':
+    dependencies:
+      jsbi: 4.3.2
 
   '@libsql/client@0.17.3':
     dependencies:
@@ -10684,7 +10883,7 @@ snapshots:
       json-schema-traverse: 0.4.1
       uri-js: 4.4.1
 
-  alchemy@2.0.0-beta.45(@effect/platform-bun@4.0.0-beta.74(effect@4.0.0-beta.74))(@effect/platform-node@4.0.0-beta.74(effect@4.0.0-beta.74)(ioredis@5.11.0))(@types/node@25.8.0)(@types/react@19.2.14)(effect@4.0.0-beta.74)(vite@8.0.10(@types/node@25.8.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.16.9)(tsx@4.22.0)(yaml@2.9.0))(vitest@4.1.6(@opentelemetry/api@1.9.1)(@types/node@25.8.0)(vite@8.0.10(@types/node@25.8.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.16.9)(tsx@4.22.0)(yaml@2.9.0)))(workerd@1.20260526.1)(ws@8.21.0):
+  alchemy@2.0.0-beta.45(@effect/platform-bun@4.0.0-beta.74(effect@4.0.0-beta.74))(@effect/platform-node@4.0.0-beta.74(effect@4.0.0-beta.74)(ioredis@5.11.0))(@effect/sql-pg@4.0.0-beta.74(effect@4.0.0-beta.74))(@types/node@25.8.0)(@types/react@19.2.14)(drizzle-kit@1.0.0-rc.1)(drizzle-orm@1.0.0-rc.1(@cloudflare/workers-types@4.20260515.1)(@effect/sql-pg@4.0.0-beta.74(effect@4.0.0-beta.74))(@libsql/client@0.17.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(effect@4.0.0-beta.74)(mysql2@3.22.4(@types/node@25.8.0))(pg@8.20.0)(zod@4.4.3))(effect@4.0.0-beta.74)(vite@8.0.10(@types/node@25.8.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.16.9)(tsx@4.22.0)(yaml@2.9.0))(vitest@4.1.6(@opentelemetry/api@1.9.1)(@types/node@25.8.0)(vite@8.0.10(@types/node@25.8.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.16.9)(tsx@4.22.0)(yaml@2.9.0)))(workerd@1.20260526.1)(ws@8.21.0):
     dependencies:
       '@alchemy.run/node-utils': 0.0.4
       '@aws-sdk/credential-providers': 3.1057.0
@@ -10725,6 +10924,9 @@ snapshots:
     optionalDependencies:
       '@effect/platform-bun': 4.0.0-beta.74(effect@4.0.0-beta.74)
       '@effect/platform-node': 4.0.0-beta.74(effect@4.0.0-beta.74)(ioredis@5.11.0)
+      '@effect/sql-pg': 4.0.0-beta.74(effect@4.0.0-beta.74)
+      drizzle-kit: 1.0.0-rc.1
+      drizzle-orm: 1.0.0-rc.1(@cloudflare/workers-types@4.20260515.1)(@effect/sql-pg@4.0.0-beta.74(effect@4.0.0-beta.74))(@libsql/client@0.17.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(effect@4.0.0-beta.74)(mysql2@3.22.4(@types/node@25.8.0))(pg@8.20.0)(zod@4.4.3)
       vite: 8.0.10(@types/node@25.8.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.16.9)(tsx@4.22.0)(yaml@2.9.0)
       ws: 8.21.0
     transitivePeerDependencies:
@@ -11335,6 +11537,14 @@ snapshots:
       esbuild: 0.25.12
       tsx: 4.22.0
 
+  drizzle-kit@1.0.0-rc.1:
+    dependencies:
+      '@drizzle-team/brocli': 0.11.0
+      '@js-temporal/polyfill': 0.5.1
+      esbuild: 0.25.12
+      get-tsconfig: 4.14.0
+      jiti: 2.7.0
+
   drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260515.1)(@libsql/client@0.17.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(mysql2@3.22.4(@types/node@25.8.0))(pg@8.20.0):
     optionalDependencies:
       '@cloudflare/workers-types': 4.20260515.1
@@ -11343,6 +11553,18 @@ snapshots:
       '@types/pg': 8.20.0
       mysql2: 3.22.4(@types/node@25.8.0)
       pg: 8.20.0
+
+  drizzle-orm@1.0.0-rc.1(@cloudflare/workers-types@4.20260515.1)(@effect/sql-pg@4.0.0-beta.74(effect@4.0.0-beta.74))(@libsql/client@0.17.3)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(effect@4.0.0-beta.74)(mysql2@3.22.4(@types/node@25.8.0))(pg@8.20.0)(zod@4.4.3):
+    optionalDependencies:
+      '@cloudflare/workers-types': 4.20260515.1
+      '@effect/sql-pg': 4.0.0-beta.74(effect@4.0.0-beta.74)
+      '@libsql/client': 0.17.3
+      '@opentelemetry/api': 1.9.1
+      '@types/pg': 8.20.0
+      effect: 4.0.0-beta.74
+      mysql2: 3.22.4(@types/node@25.8.0)
+      pg: 8.20.0
+      zod: 4.4.3
 
   dunder-proto@1.0.1:
     dependencies:
@@ -12778,6 +13000,8 @@ snapshots:
     dependencies:
       argparse: 2.0.1
 
+  jsbi@4.3.2: {}
+
   jsesc@3.1.0: {}
 
   json-buffer@3.0.1: {}
@@ -13649,6 +13873,8 @@ snapshots:
 
   obliterator@1.6.1: {}
 
+  obuf@1.1.2: {}
+
   obug@2.1.1: {}
 
   on-finished@2.4.1:
@@ -13781,7 +14007,13 @@ snapshots:
 
   pg-connection-string@2.12.0: {}
 
+  pg-cursor@2.20.0(pg@8.20.0):
+    dependencies:
+      pg: 8.20.0
+
   pg-int8@1.0.1: {}
+
+  pg-numeric@1.0.2: {}
 
   pg-pool@3.13.0(pg@8.20.0):
     dependencies:
@@ -13796,6 +14028,16 @@ snapshots:
       postgres-bytea: 1.0.1
       postgres-date: 1.0.7
       postgres-interval: 1.2.0
+
+  pg-types@4.1.0:
+    dependencies:
+      pg-int8: 1.0.1
+      pg-numeric: 1.0.2
+      postgres-array: 3.0.4
+      postgres-bytea: 3.0.0
+      postgres-date: 2.1.0
+      postgres-interval: 3.0.0
+      postgres-range: 1.1.4
 
   pg@8.20.0:
     dependencies:
@@ -13842,13 +14084,25 @@ snapshots:
 
   postgres-array@2.0.0: {}
 
+  postgres-array@3.0.4: {}
+
   postgres-bytea@1.0.1: {}
 
+  postgres-bytea@3.0.0:
+    dependencies:
+      obuf: 1.1.2
+
   postgres-date@1.0.7: {}
+
+  postgres-date@2.1.0: {}
 
   postgres-interval@1.2.0:
     dependencies:
       xtend: 4.0.2
+
+  postgres-interval@3.0.0: {}
+
+  postgres-range@1.1.4: {}
 
   prelude-ls@1.2.1: {}
 
