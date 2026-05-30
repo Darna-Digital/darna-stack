@@ -10,6 +10,8 @@ import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
 import { Api } from "./api.ts";
 import { GreetingsHandlers } from "./greetings/greetings.handlers.ts";
 import { UsersHandlers } from "./users/users.handlers.ts";
+import { WorkflowsHandlers } from "./workflows/workflows.handlers.ts";
+import GreetingWorkflow, { GreetingWorkflowService } from "./workflows/greeting.workflow.ts";
 import { Database } from "./db/database.ts";
 import { Hyperdrive } from "./db/Db.ts";
 import { ensureTracingProvider, tracerBridge } from "./observability/tracing.ts";
@@ -18,7 +20,11 @@ import { ensureTracingProvider, tracerBridge } from "./observability/tracing.ts"
 const ApiLive = Layer.mergeAll(
   HttpApiBuilder.layer(Api, { openapiPath: "/openapi.json" }),
   HttpApiScalar.layer(Api, { path: "/docs" }),
-).pipe(Layer.provide(GreetingsHandlers), Layer.provide(UsersHandlers));
+).pipe(
+  Layer.provide(GreetingsHandlers),
+  Layer.provide(UsersHandlers),
+  Layer.provide(WorkflowsHandlers),
+);
 
 export default class Worker extends Cloudflare.Worker<Worker>()(
   "Api",
@@ -27,6 +33,10 @@ export default class Worker extends Cloudflare.Worker<Worker>()(
     const conn = yield* Cloudflare.Hyperdrive.bind(Hyperdrive);
     const db = yield* Drizzle.postgres(conn.connectionString);
 
+    // Bind the example workflow: registers the binding + Workflows API resource
+    // and yields a handle the API handlers use to start/poll instances.
+    const greetingWorkflow = yield* GreetingWorkflow;
+
     // OTel config via effect/Config (resolved in Init = bound as worker secrets).
     const otelEnabled = yield* Config.boolean("OTEL_ENABLED").pipe(Config.withDefault(true));
     const sampleRate = yield* Config.number("OTEL_SAMPLE_RATE").pipe(Config.withDefault(1));
@@ -34,14 +44,19 @@ export default class Worker extends Cloudflare.Worker<Worker>()(
       Config.withDefault(""),
     );
     const authHeader = Redacted.value(
-      yield* Config.redacted("GRAFANA_OTEL_AUTH_HEADER").pipe(Config.withDefault(Redacted.make(""))),
+      yield* Config.redacted("GRAFANA_OTEL_AUTH_HEADER").pipe(
+        Config.withDefault(Redacted.make("")),
+      ),
     );
     const namespace = yield* Config.string("OTEL_DEPLOYMENT_ENV").pipe(
       Config.withDefault("development"),
     );
 
     const apiHandler = yield* HttpRouter.toHttpEffect(
-      ApiLive.pipe(Layer.provide(Layer.succeed(Database, db))),
+      ApiLive.pipe(
+        Layer.provide(Layer.succeed(Database, db)),
+        Layer.provide(Layer.succeed(GreetingWorkflowService, greetingWorkflow)),
+      ),
     );
 
     const tracingOn = otelEnabled && endpoint !== "" && authHeader !== "";
@@ -76,8 +91,6 @@ export default class Worker extends Cloudflare.Worker<Worker>()(
         : apiHandler,
     };
   }).pipe(
-    Effect.provide(
-      Layer.mergeAll(Cloudflare.HyperdriveBindingLive, HttpServer.layerServices),
-    ),
+    Effect.provide(Layer.mergeAll(Cloudflare.HyperdriveBindingLive, HttpServer.layerServices)),
   ),
 ) {}

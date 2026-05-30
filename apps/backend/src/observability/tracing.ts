@@ -1,4 +1,5 @@
 import { trace } from "@opentelemetry/api";
+import * as Effect from "effect/Effect";
 import { ExportResultCode, type ExportResult } from "@opentelemetry/core";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import {
@@ -97,3 +98,64 @@ export const tracerBridge = (namespace: string) =>
       }),
     ),
   );
+
+/** OTel config as it arrives on the Worker `env` (vars + secrets). */
+interface OtelEnv {
+  readonly OTEL_ENABLED?: unknown;
+  readonly OTEL_EXPORTER_OTLP_ENDPOINT?: unknown;
+  readonly GRAFANA_OTEL_AUTH_HEADER?: unknown;
+  readonly OTEL_DEPLOYMENT_ENV?: unknown;
+}
+
+/**
+ * Decode a raw `WorkerEnvironment` value. Alchemy binds `effect/Config` values
+ * via `ConfigProvider.fromUnknown`, which JSON-encodes them — so a string
+ * arrives quoted (e.g. `"\"https://…\""`). The Worker's `fetch` path reads them
+ * back through `Config`, but a workflow reads `env` directly, so we decode here.
+ */
+const decodeEnvString = (value: unknown): string => {
+  if (typeof value !== "string") return value == null ? "" : String(value);
+  const trimmed = value.trim();
+  if (trimmed.length >= 2 && trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    try {
+      return String(JSON.parse(trimmed));
+    } catch {
+      return trimmed.slice(1, -1);
+    }
+  }
+  return trimmed;
+};
+
+/**
+ * Wrap a Cloudflare Workflow body in a traced root span. Unlike the Worker's
+ * `fetch` (which flushes via `ctx.waitUntil`), a workflow run can simply await
+ * the flush before returning, so spans ship reliably for each run segment.
+ *
+ * Reads OTel config straight off `WorkerEnvironment` (the workflow shares the
+ * Worker's bound vars/secrets). When tracing is off or unconfigured, the body
+ * still runs with the default no-op tracer — `withSpan` never adds a service
+ * requirement, so the effect's `R` is unchanged either way.
+ */
+export const withWorkflowTracing =
+  (label: string, env: OtelEnv, attributes?: Record<string, string | number | boolean>) =>
+  <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> =>
+    Effect.gen(function* () {
+      const endpoint = decodeEnvString(env.OTEL_EXPORTER_OTLP_ENDPOINT);
+      const authHeader = decodeEnvString(env.GRAFANA_OTEL_AUTH_HEADER);
+      const namespace = decodeEnvString(env.OTEL_DEPLOYMENT_ENV) || "development";
+      const enabled = (decodeEnvString(env.OTEL_ENABLED) || "true") !== "false";
+
+      const traced = effect.pipe(
+        Effect.withSpan(label, { kind: "server", root: true, attributes }),
+      );
+
+      if (!enabled || endpoint === "" || authHeader === "") {
+        return yield* traced;
+      }
+
+      const processor = ensureTracingProvider(endpoint, authHeader, namespace);
+      const result = yield* traced.pipe(Effect.provide(tracerBridge(namespace)));
+      // Ship spans before the run segment returns (workflows may await freely).
+      yield* Effect.promise(() => processor.forceFlush());
+      return result;
+    });
