@@ -4,6 +4,8 @@ import type { paths } from "./api-schema";
 
 const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
-const fetchClient = createFetchClient<paths>({ baseUrl });
+// `credentials: "include"` so the better-auth session cookie rides along on
+// cross-origin API calls to the backend.
+const fetchClient = createFetchClient<paths>({ baseUrl, credentials: "include" });
 
 export const $api = createClient(fetchClient);

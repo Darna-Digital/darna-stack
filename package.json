@@ -26,6 +26,11 @@
   "engines": {
     "node": ">=22"
   },
+  "pnpm": {
+    "overrides": {
+      "kysely": "0.28.17"
+    }
+  },
   "devDependencies": {
     "@darna/lint": "workspace:*",
     "prettier": "^3.8.3"
