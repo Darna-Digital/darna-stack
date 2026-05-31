@@ -1,10 +1,14 @@
 import * as Cloudflare from "alchemy/Cloudflare";
-import * as Drizzle from "alchemy/Drizzle";
 import * as Cause from "effect/Cause";
 import * as Config from "effect/Config";
+import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
+import * as Scope from "effect/Scope";
+import * as PgClient from "@effect/sql-pg/PgClient";
+import * as SqlClient from "effect/unstable/sql/SqlClient";
+import type { SqlError } from "effect/unstable/sql/SqlError";
 import { HttpApiBuilder, HttpApiScalar } from "effect/unstable/httpapi";
 import { HttpRouter, HttpServer } from "effect/unstable/http";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
@@ -12,14 +16,13 @@ import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import * as HttpMiddleware from "effect/unstable/http/HttpMiddleware";
 import { Api } from "./api.ts";
 import { GreetingsHandlers } from "./greetings/greetings.handlers.ts";
-import { UsersHandlers } from "./users/users.handlers.ts";
 import { WorkflowsHandlers } from "./workflows/workflows.handlers.ts";
 import { TodoHandlers } from "./todos/http/todo.handlers.ts";
 import { TodosLive } from "./todos/layer/todo.layer.live.ts";
+import { RawSql } from "./db/sql.ts";
 import { makeAuth, setAuthInstance } from "./auth/better-auth.ts";
 import { AuthenticationLive } from "./auth/auth.middleware.live.ts";
 import GreetingWorkflow, { GreetingWorkflowService } from "./workflows/greeting.workflow.ts";
-import { Database } from "./db/database.ts";
 import { Hyperdrive } from "./db/Db.ts";
 import { ensureTracingProvider, tracerBridge } from "./observability/tracing.ts";
 
@@ -29,7 +32,6 @@ const ApiLive = Layer.mergeAll(
   HttpApiScalar.layer(Api, { path: "/docs" }),
 ).pipe(
   Layer.provide(GreetingsHandlers),
-  Layer.provide(UsersHandlers),
   Layer.provide(WorkflowsHandlers),
   Layer.provide(TodoHandlers),
 );
@@ -39,7 +41,28 @@ export default class Worker extends Cloudflare.Worker<Worker>()(
   { main: import.meta.filename, url: true },
   Effect.gen(function* () {
     const conn = yield* Cloudflare.Hyperdrive.bind(Hyperdrive);
-    const db = yield* Drizzle.postgres(conn.connectionString);
+
+    // Raw `@effect/sql` client, built once per isolate on a never-closing
+    // scope. `Effect.cached` + the manual scope mean the connection string (the
+    // Hyperdrive binding) is only read on first query — never at plan/deploy
+    // time, when the binding is absent. The todos repo runs through this: the
+    // drizzle-orm rc effect-postgres UPDATE/DELETE builders hang, raw sql does
+    // not.
+    const sqlScope = yield* Scope.make();
+    const getSqlClient = yield* Effect.cached(
+      Effect.gen(function* () {
+        const url = yield* conn.connectionString;
+        const ctx = yield* Layer.buildWithScope(PgClient.layer({ url }), sqlScope);
+        return Context.get(ctx, SqlClient.SqlClient);
+      }),
+    );
+    // The cached effect requires `RuntimeContext` (provided at the Worker fetch
+    // boundary via PlatformServices). Erase it from the service type the repos
+    // see — same trick alchemy's `Drizzle.postgres` proxy uses for its db.
+    const RawSqlLive = Layer.succeed(
+      RawSql,
+      getSqlClient as Effect.Effect<SqlClient.SqlClient, SqlError>,
+    );
 
     // Bind the example workflow: registers the binding + Workflows API resource
     // and yields a handle the API handlers use to start/poll instances.
@@ -103,17 +126,15 @@ export default class Worker extends Cloudflare.Worker<Worker>()(
       }),
     );
 
-    const DatabaseLive = Layer.succeed(Database, db);
-
     const apiHandler = yield* HttpRouter.toHttpEffect(
       ApiLive.pipe(
         Layer.provide(Layer.succeed(GreetingWorkflowService, greetingWorkflow)),
         Layer.provide(AuthenticationLive),
-        Layer.provide(DatabaseLive),
         // The Todos service is request-scoped: its methods read CurrentUser,
         // which only exists per-request (provided by the Authentication
-        // middleware). `provideRequest` builds it inside the request scope.
-        HttpRouter.provideRequest(TodosLive.pipe(Layer.provide(DatabaseLive))),
+        // middleware). `provideRequest` builds it inside the request scope, over
+        // the raw `@effect/sql` client.
+        HttpRouter.provideRequest(TodosLive.pipe(Layer.provide(RawSqlLive))),
       ),
     );
 

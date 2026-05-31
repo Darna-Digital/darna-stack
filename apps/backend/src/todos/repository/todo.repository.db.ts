@@ -1,71 +1,101 @@
 import * as Effect from "effect/Effect";
-import { eq } from "drizzle-orm";
-import { Database } from "../../db/database.ts";
-import { todos } from "../../db/schema.ts";
+import { RawSql } from "../../db/sql.ts";
 import { tryQuery } from "../../db/storage.ts";
 import { TodoNotFound, type Todo, type TodoId } from "../schema/todo.schema.model.ts";
 import type { TodoRepo } from "./todo.repository.ts";
 
-type Row = typeof todos.$inferSelect;
+interface TodoRow {
+  id: string;
+  title: string;
+  done: boolean;
+  owner_id: string;
+  created_at: string;
+}
 
-const toTodo = (row: Row): Todo => ({
-  id: row.id as TodoId,
-  title: row.title,
-  done: row.done,
-  ownerId: row.ownerId,
-  createdAt: row.createdAt,
+const rowToTodo = (r: TodoRow): Todo => ({
+  id: r.id as TodoId,
+  title: r.title,
+  done: r.done,
+  ownerId: r.owner_id,
+  createdAt: r.created_at,
 });
 
 /**
- * Postgres-backed repository over the Effect-Drizzle `Database` (Hyperdrive →
- * PlanetScale). Uses `RETURNING` so create/update read back the row in one
- * round-trip.
+ * Postgres-backed todo repository using the **raw `@effect/sql` client** (no
+ * drizzle) and **no `RETURNING`** — mutate, then read the row back. Refactored
+ * off drizzle to isolate whether the write-hang lives in drizzle or the driver.
+ * Compare with the auth-free `projects` repo (same approach).
  */
 export const makeDbTodoRepository = Effect.gen(function* () {
-  const db = yield* Database;
+  const getSql = yield* RawSql;
 
   const repo: TodoRepo = {
     list: (filter = {}) =>
       tryQuery(
         "db.todos.list",
-        filter.ownerId
-          ? db.select().from(todos).where(eq(todos.ownerId, filter.ownerId))
-          : db.select().from(todos),
-      ).pipe(Effect.map((rows) => rows.map(toTodo))),
+        Effect.gen(function* () {
+          const sql = yield* getSql;
+          const rows = filter.ownerId
+            ? yield* sql`select id, title, done, owner_id, created_at from todos where owner_id = ${filter.ownerId}`
+            : yield* sql`select id, title, done, owner_id, created_at from todos`;
+          return (rows as unknown as ReadonlyArray<TodoRow>).map(rowToTodo);
+        }),
+      ),
 
     get: (id) =>
       tryQuery(
         "db.todos.get",
-        db.select().from(todos).where(eq(todos.id, id)).limit(1),
+        Effect.gen(function* () {
+          const sql = yield* getSql;
+          return yield* sql`select id, title, done, owner_id, created_at from todos where id = ${id} limit 1`;
+        }),
       ).pipe(
-        Effect.flatMap((rows) =>
-          rows[0] ? Effect.succeed(toTodo(rows[0])) : Effect.fail(new TodoNotFound({ id })),
-        ),
+        Effect.flatMap((rows) => {
+          const row = (rows as unknown as ReadonlyArray<TodoRow>)[0];
+          return row ? Effect.succeed(rowToTodo(row)) : Effect.fail(new TodoNotFound({ id }));
+        }),
       ),
 
     create: (todo) =>
-      tryQuery("db.todos.create", db.insert(todos).values(todo).returning()).pipe(
-        Effect.map((rows) => toTodo(rows[0]!)),
+      tryQuery(
+        "db.todos.create",
+        Effect.gen(function* () {
+          const sql = yield* getSql;
+          yield* sql`insert into todos (id, title, done, owner_id, created_at)
+            values (${todo.id}, ${todo.title}, ${todo.done}, ${todo.ownerId}, ${todo.createdAt})`;
+          return todo;
+        }),
       ),
 
     update: (id, patch) =>
       tryQuery(
         "db.todos.update",
-        db.update(todos).set(patch).where(eq(todos.id, id)).returning(),
-      ).pipe(
-        Effect.flatMap((rows) =>
-          rows[0] ? Effect.succeed(toTodo(rows[0])) : Effect.fail(new TodoNotFound({ id })),
-        ),
-      ),
+        Effect.gen(function* () {
+          const sql = yield* getSql;
+          const title = patch.title;
+          const done = patch.done;
+          if (title !== undefined && done !== undefined) {
+            yield* sql`update todos set title = ${title}, done = ${done} where id = ${id}`;
+          } else if (title !== undefined) {
+            yield* sql`update todos set title = ${title} where id = ${id}`;
+          } else if (done !== undefined) {
+            yield* sql`update todos set done = ${done} where id = ${id}`;
+          }
+        }),
+      ).pipe(Effect.flatMap(() => repo.get(id))),
 
     remove: (id) =>
-      tryQuery(
-        "db.todos.remove",
-        db.delete(todos).where(eq(todos.id, id)).returning({ id: todos.id }),
-      ).pipe(
-        Effect.flatMap((rows) =>
-          rows.length > 0 ? Effect.void : Effect.fail(new TodoNotFound({ id })),
+      repo.get(id).pipe(
+        Effect.flatMap(() =>
+          tryQuery(
+            "db.todos.remove",
+            Effect.gen(function* () {
+              const sql = yield* getSql;
+              yield* sql`delete from todos where id = ${id}`;
+            }),
+          ),
         ),
+        Effect.flatMap(() => Effect.void),
       ),
   };
 
