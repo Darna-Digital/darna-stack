@@ -2,16 +2,19 @@ import { HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
 import * as Schema from "effect/Schema";
 import { StartGreeting, WorkflowStarted, WorkflowStatus } from "./workflows.model.ts";
 
-/** The `workflows` API group: start a greeting workflow and poll its status. */
-export class WorkflowsApi extends HttpApiGroup.make("workflows")
+/**
+ * A run of the greeting workflow, modeled as a CRUD resource (NWCA): starting a
+ * run is `store`, polling it is `show`. Replaces the custom start/status verbs.
+ */
+export class GreetingRunsApi extends HttpApiGroup.make("greetingRuns")
   .add(
-    HttpApiEndpoint.post("start", "/workflows/greeting", {
+    HttpApiEndpoint.post("store", "/greeting-runs", {
       payload: StartGreeting,
       success: WorkflowStarted,
     }),
   )
   .add(
-    HttpApiEndpoint.get("status", "/workflows/greeting/:instanceId", {
+    HttpApiEndpoint.get("show", "/greeting-runs/:instanceId", {
       params: { instanceId: Schema.String },
       success: WorkflowStatus,
     }),

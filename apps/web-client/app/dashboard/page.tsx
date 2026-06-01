@@ -84,7 +84,7 @@ export default function DashboardPage() {
         </CardContent>
         <CardFooter className="gap-2">
           <Button asChild>
-            <Link href="/todos">Your todos</Link>
+            <Link href="/projects">Your projects</Link>
           </Button>
           <Button variant="outline" onClick={onSignOut}>
             Sign out

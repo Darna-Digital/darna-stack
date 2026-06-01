@@ -21,7 +21,7 @@ import type { SqlError } from "effect/unstable/sql/SqlError";
  * ```ts
  * const getSql = yield* RawSql;        // Effect<SqlClient>
  * const sql = yield* getSql;           // SqlClient (cached per isolate)
- * const rows = yield* sql`select * from todos where id = ${id}`;
+ * const rows = yield* sql`select * from tasks where id = ${id}`;
  * ```
  */
 export class RawSql extends Context.Service<

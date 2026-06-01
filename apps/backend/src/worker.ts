@@ -10,10 +10,13 @@ import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import * as HttpMiddleware from "effect/unstable/http/HttpMiddleware";
 import { Api } from "./api.ts";
-import { GreetingsHandlers } from "./features/greetings/greetings.handlers.ts";
-import { WorkflowsHandlers } from "./features/workflows/workflows.handlers.ts";
-import { TodoHandlers } from "./features/todos/http/todo.handlers.ts";
-import { TodosLive } from "./features/todos/layer/todo.layer.live.ts";
+import { GreetingsController } from "./features/greetings/greetings.controller.ts";
+import { GreetingRunsController } from "./features/workflows/workflows.controller.ts";
+import { ProjectsController } from "./features/projects/http/project.controller.ts";
+import { ProjectTasksController } from "./features/tasks/http/project-task.controller.ts";
+import { TasksController } from "./features/tasks/http/task.controller.ts";
+import { ProjectsLive } from "./features/projects/layer/project.layer.live.ts";
+import { TasksLive } from "./features/tasks/layer/task.layer.live.ts";
 import { makeRawSqlLive } from "./layers/db/database.layer.ts";
 import { makeAuth, setAuthInstance } from "./features/auth/better-auth.ts";
 import { AuthenticationLive } from "./features/auth/auth.middleware.live.ts";
@@ -26,9 +29,11 @@ const ApiLive = Layer.mergeAll(
   HttpApiBuilder.layer(Api, { openapiPath: "/openapi.json" }),
   HttpApiScalar.layer(Api, { path: "/docs" }),
 ).pipe(
-  Layer.provide(GreetingsHandlers),
-  Layer.provide(WorkflowsHandlers),
-  Layer.provide(TodoHandlers),
+  Layer.provide(GreetingsController),
+  Layer.provide(GreetingRunsController),
+  Layer.provide(ProjectsController),
+  Layer.provide(ProjectTasksController),
+  Layer.provide(TasksController),
 );
 
 export default class Worker extends Cloudflare.Worker<Worker>()(
@@ -40,8 +45,8 @@ export default class Worker extends Cloudflare.Worker<Worker>()(
     // Raw `@effect/sql` client layer, built once per isolate. The layer factory
     // (see `layers/db/database.layer.ts`) keeps the connection lazy + cached on a
     // never-closing scope, so the Hyperdrive binding is only read on first query
-    // — never at plan/deploy time, when the binding is absent. The todos repo
-    // runs through this: the drizzle-orm rc effect-postgres UPDATE/DELETE
+    // — never at plan/deploy time, when the binding is absent. The projects/tasks
+    // repos run through this: the drizzle-orm rc effect-postgres UPDATE/DELETE
     // builders hang, raw sql does not.
     const RawSqlLive = yield* makeRawSqlLive(conn.connectionString);
 
@@ -111,11 +116,13 @@ export default class Worker extends Cloudflare.Worker<Worker>()(
       ApiLive.pipe(
         Layer.provide(Layer.succeed(GreetingWorkflowService, greetingWorkflow)),
         Layer.provide(AuthenticationLive),
-        // The Todos service is request-scoped: its methods read CurrentUser,
-        // which only exists per-request (provided by the Authentication
-        // middleware). `provideRequest` builds it inside the request scope, over
-        // the raw `@effect/sql` client.
-        HttpRouter.provideRequest(TodosLive.pipe(Layer.provide(RawSqlLive))),
+        // The Projects/Tasks services are request-scoped: their methods read
+        // CurrentUser, which only exists per-request (provided by the
+        // Authentication middleware). `provideRequest` builds them inside the
+        // request scope, over the raw `@effect/sql` client.
+        HttpRouter.provideRequest(
+          Layer.mergeAll(ProjectsLive, TasksLive).pipe(Layer.provide(RawSqlLive)),
+        ),
       ),
     );
 
@@ -162,7 +169,7 @@ export default class Worker extends Cloudflare.Worker<Worker>()(
       }
 
       // Effect HttpApi. Ensure better-auth is built (and registered for the
-      // Authentication middleware, which the todos group uses) before handling.
+      // Authentication middleware, which the projects/tasks groups use) before handling.
       // `getAuth` is cached, so this is a cheap lookup after the first request.
       yield* getAuth;
       return yield* apiHandler;

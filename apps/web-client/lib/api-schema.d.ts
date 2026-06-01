@@ -11,32 +11,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["greetings.list"];
+        get: operations["greetings.index"];
         put?: never;
-        post: operations["greetings.create"];
+        post: operations["greetings.store"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/users": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["users.list"];
-        put?: never;
-        post: operations["users.create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/workflows/greeting": {
+    "/api/greeting-runs": {
         parameters: {
             query?: never;
             header?: never;
@@ -45,21 +29,21 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["workflows.start"];
+        post: operations["greetingRuns.store"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/workflows/greeting/{instanceId}": {
+    "/api/greeting-runs/{instanceId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["workflows.status"];
+        get: operations["greetingRuns.show"];
         put?: never;
         post?: never;
         delete?: never;
@@ -68,33 +52,65 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/todos": {
+    "/api/projects": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["todos.list"];
+        get: operations["projects.index"];
         put?: never;
-        post: operations["todos.create"];
+        post: operations["projects.store"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/todos/{id}": {
+    "/api/projects/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["todos.getById"];
-        put: operations["todos.update"];
+        get: operations["projects.show"];
+        put: operations["projects.update"];
         post?: never;
-        delete: operations["todos.remove"];
+        delete: operations["projects.destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{projectId}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["projectTasks.index"];
+        put?: never;
+        post: operations["projectTasks.store"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["tasks.show"];
+        put: operations["tasks.update"];
+        post?: never;
+        delete: operations["tasks.destroy"];
         options?: never;
         head?: never;
         patch?: never;
@@ -112,9 +128,14 @@ export interface components {
             /** @enum {string} */
             _tag: "NotAuthenticated";
         };
-        TodoNotFound: {
+        ProjectNotFound: {
             /** @enum {string} */
-            _tag: "TodoNotFound";
+            _tag: "ProjectNotFound";
+            id: string;
+        };
+        TaskNotFound: {
+            /** @enum {string} */
+            _tag: "TaskNotFound";
             id: string;
         };
     };
@@ -126,7 +147,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    "greetings.list": {
+    "greetings.index": {
         parameters: {
             query?: never;
             header?: never;
@@ -149,7 +170,7 @@ export interface operations {
             };
         };
     };
-    "greetings.create": {
+    "greetings.store": {
         parameters: {
             query?: never;
             header?: never;
@@ -178,62 +199,7 @@ export interface operations {
             };
         };
     };
-    "users.list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        id: (number | "NaN" | "Infinity" | "-Infinity") | ("Infinity" | "-Infinity" | "NaN");
-                        email: string;
-                        name: string;
-                    }[];
-                };
-            };
-        };
-    };
-    "users.create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    email: string;
-                    name: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        id: (number | "NaN" | "Infinity" | "-Infinity") | ("Infinity" | "-Infinity" | "NaN");
-                        email: string;
-                        name: string;
-                    };
-                };
-            };
-        };
-    };
-    "workflows.start": {
+    "greetingRuns.store": {
         parameters: {
             query?: never;
             header?: never;
@@ -261,7 +227,7 @@ export interface operations {
             };
         };
     };
-    "workflows.status": {
+    "greetingRuns.show": {
         parameters: {
             query?: never;
             header?: never;
@@ -290,7 +256,7 @@ export interface operations {
             };
         };
     };
-    "todos.list": {
+    "projects.index": {
         parameters: {
             query?: never;
             header?: never;
@@ -307,8 +273,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
-                        title: string;
-                        done: boolean;
+                        name: string;
                         ownerId: string;
                         createdAt: string;
                     }[];
@@ -334,11 +299,278 @@ export interface operations {
             };
         };
     };
-    "todos.create": {
+    "projects.store": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        name: string;
+                        ownerId: string;
+                        createdAt: string;
+                    };
+                };
+            };
+            /** @description NotAuthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotAuthenticated"];
+                };
+            };
+            /** @description StorageError */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageError"];
+                };
+            };
+        };
+    };
+    "projects.show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        name: string;
+                        ownerId: string;
+                        createdAt: string;
+                    };
+                };
+            };
+            /** @description NotAuthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotAuthenticated"];
+                };
+            };
+            /** @description ProjectNotFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectNotFound"];
+                };
+            };
+            /** @description StorageError */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageError"];
+                };
+            };
+        };
+    };
+    "projects.update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        name: string;
+                        ownerId: string;
+                        createdAt: string;
+                    };
+                };
+            };
+            /** @description NotAuthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotAuthenticated"];
+                };
+            };
+            /** @description ProjectNotFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectNotFound"];
+                };
+            };
+            /** @description StorageError */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageError"];
+                };
+            };
+        };
+    };
+    "projects.destroy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description <No Content> */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description NotAuthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotAuthenticated"];
+                };
+            };
+            /** @description ProjectNotFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectNotFound"];
+                };
+            };
+            /** @description StorageError */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageError"];
+                };
+            };
+        };
+    };
+    "projectTasks.index": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        title: string;
+                        done: boolean;
+                        projectId: string;
+                        createdAt: string;
+                    }[];
+                };
+            };
+            /** @description NotAuthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotAuthenticated"];
+                };
+            };
+            /** @description ProjectNotFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectNotFound"];
+                };
+            };
+            /** @description StorageError */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageError"];
+                };
+            };
+        };
+    };
+    "projectTasks.store": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+            };
             cookie?: never;
         };
         requestBody: {
@@ -359,7 +591,7 @@ export interface operations {
                         id: string;
                         title: string;
                         done: boolean;
-                        ownerId: string;
+                        projectId: string;
                         createdAt: string;
                     };
                 };
@@ -373,6 +605,15 @@ export interface operations {
                     "application/json": components["schemas"]["NotAuthenticated"];
                 };
             };
+            /** @description ProjectNotFound */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectNotFound"];
+                };
+            };
             /** @description StorageError */
             500: {
                 headers: {
@@ -384,7 +625,7 @@ export interface operations {
             };
         };
     };
-    "todos.getById": {
+    "tasks.show": {
         parameters: {
             query?: never;
             header?: never;
@@ -405,7 +646,7 @@ export interface operations {
                         id: string;
                         title: string;
                         done: boolean;
-                        ownerId: string;
+                        projectId: string;
                         createdAt: string;
                     };
                 };
@@ -419,13 +660,13 @@ export interface operations {
                     "application/json": components["schemas"]["NotAuthenticated"];
                 };
             };
-            /** @description TodoNotFound */
+            /** @description TaskNotFound */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TodoNotFound"];
+                    "application/json": components["schemas"]["TaskNotFound"];
                 };
             };
             /** @description StorageError */
@@ -439,7 +680,7 @@ export interface operations {
             };
         };
     };
-    "todos.update": {
+    "tasks.update": {
         parameters: {
             query?: never;
             header?: never;
@@ -467,7 +708,7 @@ export interface operations {
                         id: string;
                         title: string;
                         done: boolean;
-                        ownerId: string;
+                        projectId: string;
                         createdAt: string;
                     };
                 };
@@ -481,13 +722,13 @@ export interface operations {
                     "application/json": components["schemas"]["NotAuthenticated"];
                 };
             };
-            /** @description TodoNotFound */
+            /** @description TaskNotFound */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TodoNotFound"];
+                    "application/json": components["schemas"]["TaskNotFound"];
                 };
             };
             /** @description StorageError */
@@ -501,7 +742,7 @@ export interface operations {
             };
         };
     };
-    "todos.remove": {
+    "tasks.destroy": {
         parameters: {
             query?: never;
             header?: never;
@@ -528,13 +769,13 @@ export interface operations {
                     "application/json": components["schemas"]["NotAuthenticated"];
                 };
             };
-            /** @description TodoNotFound */
+            /** @description TaskNotFound */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TodoNotFound"];
+                    "application/json": components["schemas"]["TaskNotFound"];
                 };
             };
             /** @description StorageError */

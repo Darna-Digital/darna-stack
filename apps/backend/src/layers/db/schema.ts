@@ -1,13 +1,24 @@
 import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
-/** App `todos`, owned by a better-auth user (see `user` below). */
-export const todos = pgTable("todos", {
+/** App `projects`, owned by a better-auth user (see `user` below). */
+export const projects = pgTable("projects", {
   id: text("id").primaryKey(),
-  title: text("title").notNull(),
-  done: boolean("done").notNull().default(false),
+  name: text("name").notNull(),
   ownerId: text("owner_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
+  createdAt: text("created_at").notNull(),
+});
+
+/** App `tasks`, a child of a {@link projects} row. Ownership flows through the
+ * project — a task has no owner column of its own. */
+export const tasks = pgTable("tasks", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  done: boolean("done").notNull().default(false),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
   createdAt: text("created_at").notNull(),
 });
 
