@@ -128,16 +128,16 @@ export interface RecordedNotification {
   readonly owner: User;
 }
 
-const recordInto = (calls: Ref.Ref<ReadonlyArray<RecordedNotification>>): TaskNotifierService => ({
-  taskCreated: (task, owner) => Ref.update(calls, (recorded) => [...recorded, { task, owner }]),
-});
-
 export const makeTaskNotifierMemory = Effect.gen(function* () {
-  const calls = yield* Ref.make<ReadonlyArray<RecordedNotification>>([]);
-  return { calls, layer: Layer.succeed(TaskNotifier, recordInto(calls)) } as const;
+  const log = yield* Ref.make<ReadonlyArray<RecordedNotification>>([]);
+  return {
+    recorded: Ref.get(log),
+    layer: Layer.succeed(TaskNotifier, {
+      taskCreated: (task, owner) => Ref.update(log, (all) => [...all, { task, owner }]),
+    }),
+  } as const;
 });
 
-export const TaskNotifierMemory = Layer.effect(
-  TaskNotifier,
-  Effect.map(Ref.make<ReadonlyArray<RecordedNotification>>([]), recordInto),
+export const TaskNotifierMemory = Layer.unwrap(
+  Effect.map(makeTaskNotifierMemory, ({ layer }) => layer),
 );

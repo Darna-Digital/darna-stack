@@ -1,6 +1,6 @@
 import { describe, expect } from "vitest";
 import { it } from "@effect/vitest";
-import { Effect, Layer, Ref } from "effect";
+import { Effect, Layer } from "effect";
 import { Tasks } from "./task.service.ts";
 import { TasksMemory } from "../layer/task.layer.memory.ts";
 import { TaskNotifier, makeTaskNotifierMemory } from "../workflow/task-notification.workflow.ts";
@@ -94,30 +94,30 @@ describe("Tasks.create", () => {
 describe("Tasks.create notifies the owner", () => {
   it.effect("triggers the notifier with the created task and current user", () =>
     Effect.gen(function* () {
-      const { calls, layer } = yield* makeTaskNotifierMemory;
+      const { recorded, layer } = yield* makeTaskNotifierMemory;
       const created = yield* Effect.gen(function* () {
         const tasks = yield* Tasks;
         return yield* tasks.create("p-alice" as ProjectId, { title: "Buy milk" });
       }).pipe(Effect.provide(env({ user: alice, notifier: layer })));
 
-      const recorded = yield* Ref.get(calls);
-      expect(recorded).toHaveLength(1);
-      expect(recorded[0]!.task.id).toBe(created.id);
-      expect(recorded[0]!.task.title).toBe("Buy milk");
-      expect(recorded[0]!.owner.id).toBe(alice.id);
+      const calls = yield* recorded;
+      expect(calls).toHaveLength(1);
+      expect(calls[0]!.task.id).toBe(created.id);
+      expect(calls[0]!.task.title).toBe("Buy milk");
+      expect(calls[0]!.owner.id).toBe(alice.id);
     }),
   );
 
   it.effect("does not notify when creation is refused", () =>
     Effect.gen(function* () {
-      const { calls, layer } = yield* makeTaskNotifierMemory;
+      const { recorded, layer } = yield* makeTaskNotifierMemory;
       const error = yield* Effect.gen(function* () {
         const tasks = yield* Tasks;
         return yield* Effect.flip(tasks.create("p-bob" as ProjectId, { title: "nope" }));
       }).pipe(Effect.provide(env({ user: alice, notifier: layer })));
 
       expect(tag(error)).toBe("ProjectNotFound");
-      expect(yield* Ref.get(calls)).toHaveLength(0);
+      expect(yield* recorded).toHaveLength(0);
     }),
   );
 });
