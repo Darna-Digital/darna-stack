@@ -23,7 +23,9 @@ groups verify it with an Effect middleware.
 better-auth owns sign-up, sign-in, email verification, and password reset.
 `makeAuth` configures email/password with a Drizzle adapter over the same
 Postgres pool (the `user`, `session`, `account`, `verification` tables), and
-sends verification and reset emails through the backend's email layer:
+sends verification and reset emails through the backend's email layer (the
+console in local dev; Cloudflare Email Service once `EMAIL_FROM` is set to an
+address on a verified sending domain):
 
 ```ts
 return betterAuth({

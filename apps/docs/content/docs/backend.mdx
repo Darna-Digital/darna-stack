@@ -24,7 +24,7 @@ apps/backend/
     │   └── auth/                better-auth + the Authentication middleware
     ├── layers/
     │   ├── db/                  database.layer (RawSql), db-iac, schema, migrations
-    │   └── email.layer.ts
+    │   └── email.layer.ts        console in dev; Cloudflare Email Service when EMAIL_FROM set
     └── observability/tracing.ts OpenTelemetry wiring
 ```
 

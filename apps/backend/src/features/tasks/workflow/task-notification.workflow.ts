@@ -1,10 +1,16 @@
 import * as Cloudflare from "alchemy/Cloudflare";
+import * as Config from "effect/Config";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Ref from "effect/Ref";
 import type { User } from "../../auth/current-user.ts";
-import { sendEmail } from "../../../layers/email.layer.ts";
+import {
+  makeBindingSender,
+  sendEmail,
+  setEmailSender,
+  type RawSendEmailBinding,
+} from "../../../layers/email.layer.ts";
 import { withWorkflowTracing } from "../../../observability/tracing.ts";
 import type { Task } from "../schema/task.schema.model.ts";
 
@@ -14,6 +20,12 @@ export interface TaskNotificationInput {
   readonly projectId: string;
   readonly ownerEmail: string;
   readonly ownerName: string;
+  /**
+   * Sender address, resolved in the Worker (where `EMAIL_FROM` config is
+   * reliably available) and threaded through the durable payload so the
+   * workflow never has to read it from its own runtime env.
+   */
+  readonly emailFrom: string;
 }
 
 export interface TaskNotificationResult {
@@ -68,6 +80,17 @@ export default class TaskNotificationWorkflow extends Cloudflare.Workflow<TaskNo
   Effect.gen(function* () {
     return Effect.fn(function* (input: TaskNotificationInput) {
       const env = yield* Cloudflare.WorkerEnvironment;
+      const bindings = env as Record<string, unknown>;
+      const hasBinding = Boolean(bindings.Email);
+      yield* Effect.logInfo("task-notification: email setup").pipe(
+        Effect.annotateLogs({
+          "email.from": input.emailFrom || "(none)",
+          "email.binding_present": hasBinding,
+        }),
+      );
+      if (input.emailFrom && hasBinding) {
+        setEmailSender(makeBindingSender(bindings.Email as RawSendEmailBinding, input.emailFrom));
+      }
       return yield* runTaskNotification(input).pipe(
         withWorkflowTracing("workflow.task-notification", env as Record<string, unknown>, {
           "workflow.name": "TaskNotificationWorkflow",
@@ -95,6 +118,7 @@ export const TaskNotifierLive = Layer.effect(
   TaskNotifier,
   Effect.gen(function* () {
     const workflow = yield* TaskNotificationWorkflowService;
+    const emailFrom = yield* Config.string("EMAIL_FROM").pipe(Config.withDefault(""));
 
     return {
       taskCreated: (task, owner) =>
@@ -105,6 +129,7 @@ export const TaskNotifierLive = Layer.effect(
             projectId: task.projectId,
             ownerEmail: owner.email,
             ownerName: owner.name,
+            emailFrom,
           })
           .pipe(
             Effect.flatMap((instance) =>

@@ -17,6 +17,7 @@ import { TasksController } from "./features/tasks/http/task.controller.ts";
 import { ProjectsLive } from "./features/projects/layer/project.layer.live.ts";
 import { TasksLive } from "./features/tasks/layer/task.layer.live.ts";
 import { makeRawSqlLive } from "./layers/db/database.layer.ts";
+import { makeBindingSender, setEmailSender } from "./layers/email.layer.ts";
 import { makeAuth, setAuthInstance } from "./features/auth/better-auth.ts";
 import { AuthenticationLive } from "./features/auth/auth.middleware.live.ts";
 import TaskNotificationWorkflow, {
@@ -52,6 +53,7 @@ const loadConfig = Effect.gen(function* () {
     Config.withDefault("http://localhost:7001"),
   );
   const authCookieDomain = yield* Config.string("AUTH_COOKIE_DOMAIN").pipe(Config.withDefault(""));
+  const emailFrom = yield* Config.string("EMAIL_FROM").pipe(Config.withDefault(""));
   const authSecret = Redacted.value(
     yield* Config.redacted("BETTER_AUTH_SECRET").pipe(
       Config.withDefault(Redacted.make("local-dev-insecure-secret-change-in-production")),
@@ -68,6 +70,7 @@ const loadConfig = Effect.gen(function* () {
     webClientUrl,
     authCookieDomain,
     authSecret,
+    emailFrom,
   };
 });
 
@@ -95,6 +98,8 @@ export default class Worker extends Cloudflare.Worker<Worker>()(
     const conn = yield* Cloudflare.Hyperdrive.bind(Hyperdrive);
     const RawSqlLive = yield* makeRawSqlLive(conn.connectionString);
     const taskNotificationWorkflow = yield* TaskNotificationWorkflow;
+    const emailBinding = yield* Cloudflare.SendEmail("Email");
+    const email = yield* Cloudflare.SendEmail.bind(emailBinding);
     const cfg = yield* loadConfig;
 
     const getAuth = yield* Effect.cached(
@@ -108,6 +113,10 @@ export default class Worker extends Cloudflare.Worker<Worker>()(
           cookieDomain: cfg.authCookieDomain,
         });
         setAuthInstance(auth);
+        if (cfg.emailFrom) {
+          const rawEmail = yield* email.raw;
+          setEmailSender(makeBindingSender(rawEmail, cfg.emailFrom));
+        }
         return auth;
       }),
     );
@@ -191,6 +200,12 @@ export default class Worker extends Cloudflare.Worker<Worker>()(
         : handler,
     };
   }).pipe(
-    Effect.provide(Layer.mergeAll(Cloudflare.HyperdriveBindingLive, HttpServer.layerServices)),
+    Effect.provide(
+      Layer.mergeAll(
+        Cloudflare.HyperdriveBindingLive,
+        Cloudflare.SendEmailBindingLive,
+        HttpServer.layerServices,
+      ),
+    ),
   ),
 ) {}
