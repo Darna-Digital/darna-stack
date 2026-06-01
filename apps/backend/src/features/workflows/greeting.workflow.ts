@@ -1,7 +1,7 @@
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
-import { withWorkflowTracing } from "../observability/tracing.ts";
+import { withWorkflowTracing } from "../../observability/tracing.ts";
 
 /** Payload a caller sends to start a greeting workflow. */
 export interface GreetingInput {

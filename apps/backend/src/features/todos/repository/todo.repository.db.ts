@@ -1,6 +1,6 @@
 import * as Effect from "effect/Effect";
-import { RawSql } from "../../db/sql.ts";
-import { tryQuery } from "../../db/storage.ts";
+import { RawSql } from "../../../layers/db/database.layer.ts";
+import { tryQuery } from "../../../layers/db/db.ts";
 import { TodoNotFound, type Todo, type TodoId } from "../schema/todo.schema.model.ts";
 import type { TodoRepo } from "./todo.repository.ts";
 

@@ -6,15 +6,15 @@ import * as Effect from "effect/Effect";
 /**
  * PlanetScale Postgres database + branch + role, with Drizzle migrations.
  *
- * `Drizzle.Schema` regenerates pending migration SQL from `./src/db/schema.ts`;
+ * `Drizzle.Schema` regenerates pending migration SQL from `./src/layers/db/schema.ts`;
  * `PostgresBranch.migrationsDir` is wired to its `out`, so the branch applies new
  * migrations transactionally on deploy. Provider order:
  *   Drizzle.Schema -> PostgresDatabase -> PostgresBranch -> PostgresRole.
  */
 export const PlanetscaleDb = Effect.gen(function* () {
   const schema = yield* Drizzle.Schema("app-schema", {
-    schema: "./src/db/schema.ts",
-    out: "./migrations",
+    schema: "./src/layers/db/schema.ts",
+    out: "./src/layers/db/migrations",
     dialect: "postgres",
   });
 

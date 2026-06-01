@@ -2,8 +2,8 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import { account, session, user, verification } from "../db/schema.ts";
-import { sendEmail } from "./email.ts";
+import { account, session, user, verification } from "../../layers/db/schema.ts";
+import { sendEmail } from "../../layers/email.layer.ts";
 
 const authSchema = { user, session, account, verification };
 

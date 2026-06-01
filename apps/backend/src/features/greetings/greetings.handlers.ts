@@ -1,6 +1,6 @@
 import { HttpApiBuilder } from "effect/unstable/httpapi";
 import * as Effect from "effect/Effect";
-import { Api } from "../api.ts";
+import { Api } from "../../api.ts";
 import type { Greeting } from "./greetings.model.ts";
 
 // In-memory store — no DB yet.

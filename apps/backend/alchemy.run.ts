@@ -6,7 +6,7 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
 import Worker from "./src/worker.ts";
-import { Hyperdrive, PlanetscaleDb } from "./src/db/Db.ts";
+import { Hyperdrive, PlanetscaleDb } from "./src/layers/db/db-iac.ts";
 
 export default Alchemy.Stack(
   "DarnaBackend",

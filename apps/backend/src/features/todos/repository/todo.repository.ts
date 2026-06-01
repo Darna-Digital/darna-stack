@@ -1,6 +1,6 @@
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
-import { StorageError, type Patch } from "../../db/storage.ts";
+import { StorageError, type Patch } from "../../../layers/db/db.ts";
 import { TodoNotFound, type Todo, type TodoId } from "../schema/todo.schema.model.ts";
 
 export type TodoFilter = { ownerId?: string | undefined };

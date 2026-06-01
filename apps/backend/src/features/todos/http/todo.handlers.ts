@@ -1,6 +1,6 @@
 import * as Effect from "effect/Effect";
 import { HttpApiBuilder } from "effect/unstable/httpapi";
-import { Api } from "../../api.ts";
+import { Api } from "../../../api.ts";
 import { Todos } from "../service/todo.service.ts";
 
 export const TodoHandlers = HttpApiBuilder.group(Api, "todos", (handlers) =>

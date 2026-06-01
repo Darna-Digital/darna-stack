@@ -1,6 +1,6 @@
 import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "effect/unstable/httpapi";
 import * as Schema from "effect/Schema";
-import { StorageError } from "../../db/storage.ts";
+import { StorageError } from "../../../layers/db/db.ts";
 import { Authentication } from "../../auth/auth.middleware.ts";
 import { TodoId, TodoNotFound, TodoSchema } from "../schema/todo.schema.model.ts";
 import { CreateTodoSchema, UpdateTodoSchema } from "../schema/todo.schema.requests.ts";

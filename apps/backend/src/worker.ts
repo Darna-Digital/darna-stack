@@ -1,29 +1,24 @@
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Cause from "effect/Cause";
 import * as Config from "effect/Config";
-import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
-import * as Scope from "effect/Scope";
-import * as PgClient from "@effect/sql-pg/PgClient";
-import * as SqlClient from "effect/unstable/sql/SqlClient";
-import type { SqlError } from "effect/unstable/sql/SqlError";
 import { HttpApiBuilder, HttpApiScalar } from "effect/unstable/httpapi";
 import { HttpRouter, HttpServer } from "effect/unstable/http";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import * as HttpMiddleware from "effect/unstable/http/HttpMiddleware";
 import { Api } from "./api.ts";
-import { GreetingsHandlers } from "./greetings/greetings.handlers.ts";
-import { WorkflowsHandlers } from "./workflows/workflows.handlers.ts";
-import { TodoHandlers } from "./todos/http/todo.handlers.ts";
-import { TodosLive } from "./todos/layer/todo.layer.live.ts";
-import { RawSql } from "./db/sql.ts";
-import { makeAuth, setAuthInstance } from "./auth/better-auth.ts";
-import { AuthenticationLive } from "./auth/auth.middleware.live.ts";
-import GreetingWorkflow, { GreetingWorkflowService } from "./workflows/greeting.workflow.ts";
-import { Hyperdrive } from "./db/Db.ts";
+import { GreetingsHandlers } from "./features/greetings/greetings.handlers.ts";
+import { WorkflowsHandlers } from "./features/workflows/workflows.handlers.ts";
+import { TodoHandlers } from "./features/todos/http/todo.handlers.ts";
+import { TodosLive } from "./features/todos/layer/todo.layer.live.ts";
+import { makeRawSqlLive } from "./layers/db/database.layer.ts";
+import { makeAuth, setAuthInstance } from "./features/auth/better-auth.ts";
+import { AuthenticationLive } from "./features/auth/auth.middleware.live.ts";
+import GreetingWorkflow, { GreetingWorkflowService } from "./features/workflows/greeting.workflow.ts";
+import { Hyperdrive } from "./layers/db/db-iac.ts";
 import { ensureTracingProvider, tracerBridge } from "./observability/tracing.ts";
 
 // The API as a router layer: endpoints + handlers + OpenAPI spec + Scalar docs.
@@ -42,27 +37,13 @@ export default class Worker extends Cloudflare.Worker<Worker>()(
   Effect.gen(function* () {
     const conn = yield* Cloudflare.Hyperdrive.bind(Hyperdrive);
 
-    // Raw `@effect/sql` client, built once per isolate on a never-closing
-    // scope. `Effect.cached` + the manual scope mean the connection string (the
-    // Hyperdrive binding) is only read on first query — never at plan/deploy
-    // time, when the binding is absent. The todos repo runs through this: the
-    // drizzle-orm rc effect-postgres UPDATE/DELETE builders hang, raw sql does
-    // not.
-    const sqlScope = yield* Scope.make();
-    const getSqlClient = yield* Effect.cached(
-      Effect.gen(function* () {
-        const url = yield* conn.connectionString;
-        const ctx = yield* Layer.buildWithScope(PgClient.layer({ url }), sqlScope);
-        return Context.get(ctx, SqlClient.SqlClient);
-      }),
-    );
-    // The cached effect requires `RuntimeContext` (provided at the Worker fetch
-    // boundary via PlatformServices). Erase it from the service type the repos
-    // see — same trick alchemy's `Drizzle.postgres` proxy uses for its db.
-    const RawSqlLive = Layer.succeed(
-      RawSql,
-      getSqlClient as Effect.Effect<SqlClient.SqlClient, SqlError>,
-    );
+    // Raw `@effect/sql` client layer, built once per isolate. The layer factory
+    // (see `layers/db/database.layer.ts`) keeps the connection lazy + cached on a
+    // never-closing scope, so the Hyperdrive binding is only read on first query
+    // — never at plan/deploy time, when the binding is absent. The todos repo
+    // runs through this: the drizzle-orm rc effect-postgres UPDATE/DELETE
+    // builders hang, raw sql does not.
+    const RawSqlLive = yield* makeRawSqlLive(conn.connectionString);
 
     // Bind the example workflow: registers the binding + Workflows API resource
     // and yields a handle the API handlers use to start/poll instances.

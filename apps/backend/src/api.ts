@@ -1,7 +1,7 @@
 import { HttpApi } from "effect/unstable/httpapi";
-import { GreetingsApi } from "./greetings/greetings.api.ts";
-import { WorkflowsApi } from "./workflows/workflows.api.ts";
-import { TodoApi } from "./todos/http/todo.api.ts";
+import { GreetingsApi } from "./features/greetings/greetings.api.ts";
+import { WorkflowsApi } from "./features/workflows/workflows.api.ts";
+import { TodoApi } from "./features/todos/http/todo.api.ts";
 
 export class Api extends HttpApi.make("darna")
   .add(GreetingsApi)
