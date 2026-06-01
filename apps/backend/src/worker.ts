@@ -17,7 +17,7 @@ import { TasksController } from "./features/tasks/http/task.controller.ts";
 import { ProjectsLive } from "./features/projects/layer/project.layer.live.ts";
 import { TasksLive } from "./features/tasks/layer/task.layer.live.ts";
 import { makeRawSqlLive } from "./layers/db/database.layer.ts";
-import { makeBindingSender, setEmailSender } from "./layers/email.layer.ts";
+import { bindingEmail, sendWith } from "./layers/email.layer.ts";
 import { makeAuth, setAuthInstance } from "./features/auth/better-auth.ts";
 import { AuthenticationLive } from "./features/auth/auth.middleware.live.ts";
 import TaskNotificationWorkflow, {
@@ -105,18 +105,16 @@ export default class Worker extends Cloudflare.Worker<Worker>()(
     const getAuth = yield* Effect.cached(
       Effect.gen(function* () {
         const connectionString = Redacted.value(yield* conn.connectionString);
+        const emailService = bindingEmail(yield* email.raw, cfg.emailFrom);
         const auth = makeAuth({
           connectionString,
           secret: cfg.authSecret,
           baseURL: cfg.authBaseUrl,
           webClientUrl: cfg.webClientUrl,
           cookieDomain: cfg.authCookieDomain,
+          sendEmail: sendWith(emailService),
         });
         setAuthInstance(auth);
-        if (cfg.emailFrom) {
-          const rawEmail = yield* email.raw;
-          setEmailSender(makeBindingSender(rawEmail, cfg.emailFrom));
-        }
         return auth;
       }),
     );

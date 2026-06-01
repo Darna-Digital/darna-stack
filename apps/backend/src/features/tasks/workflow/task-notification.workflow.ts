@@ -5,12 +5,7 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Ref from "effect/Ref";
 import type { User } from "../../auth/current-user.ts";
-import {
-  makeBindingSender,
-  sendEmail,
-  setEmailSender,
-  type RawSendEmailBinding,
-} from "../../../layers/email.layer.ts";
+import { Email, bindingEmail, type SendEmailBinding } from "../../../layers/email.layer.ts";
 import { withWorkflowTracing } from "../../../observability/tracing.ts";
 import type { Task } from "../schema/task.schema.model.ts";
 
@@ -36,36 +31,38 @@ export interface TaskNotificationResult {
 
 const runTaskNotification = (input: TaskNotificationInput) =>
   Effect.gen(function* () {
+    const email = yield* Email;
+
     yield* Cloudflare.task(
       "notify-created",
-      Effect.promise(() =>
-        sendEmail({
+      email
+        .send({
           to: input.ownerEmail,
           subject: `Task added: ${input.title}`,
           text: `Hi ${input.ownerName},\n\nYour task "${input.title}" was added. We'll send a reminder if it's still open.`,
-        }),
-      ).pipe(
-        Effect.withSpan("step.notify-created", {
-          attributes: { "task.id": input.taskId, "task.title": input.title },
-        }),
-      ),
+        })
+        .pipe(
+          Effect.withSpan("step.notify-created", {
+            attributes: { "task.id": input.taskId, "task.title": input.title },
+          }),
+        ),
     );
 
     yield* Cloudflare.sleep("reminder-delay", "10 seconds");
 
     yield* Cloudflare.task(
       "send-reminder",
-      Effect.promise(() =>
-        sendEmail({
+      email
+        .send({
           to: input.ownerEmail,
           subject: `Reminder: ${input.title}`,
           text: `Hi ${input.ownerName},\n\nJust a reminder about your task "${input.title}".`,
-        }),
-      ).pipe(
-        Effect.withSpan("step.send-reminder", {
-          attributes: { "task.id": input.taskId },
-        }),
-      ),
+        })
+        .pipe(
+          Effect.withSpan("step.send-reminder", {
+            attributes: { "task.id": input.taskId },
+          }),
+        ),
     );
 
     return {
@@ -80,18 +77,9 @@ export default class TaskNotificationWorkflow extends Cloudflare.Workflow<TaskNo
   Effect.gen(function* () {
     return Effect.fn(function* (input: TaskNotificationInput) {
       const env = yield* Cloudflare.WorkerEnvironment;
-      const bindings = env as Record<string, unknown>;
-      const hasBinding = Boolean(bindings.Email);
-      yield* Effect.logInfo("task-notification: email setup").pipe(
-        Effect.annotateLogs({
-          "email.from": input.emailFrom || "(none)",
-          "email.binding_present": hasBinding,
-        }),
-      );
-      if (input.emailFrom && hasBinding) {
-        setEmailSender(makeBindingSender(bindings.Email as RawSendEmailBinding, input.emailFrom));
-      }
+      const binding = (env as Record<string, unknown>).Email as SendEmailBinding;
       return yield* runTaskNotification(input).pipe(
+        Effect.provideService(Email, bindingEmail(binding, input.emailFrom)),
         withWorkflowTracing("workflow.task-notification", env as Record<string, unknown>, {
           "workflow.name": "TaskNotificationWorkflow",
           "task.id": input.taskId,
