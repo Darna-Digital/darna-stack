@@ -2,6 +2,7 @@ import * as Cloudflare from "alchemy/Cloudflare";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Ref from "effect/Ref";
 import type { User } from "../../auth/current-user.ts";
 import { sendEmail } from "../../../layers/email.layer.ts";
 import { withWorkflowTracing } from "../../../observability/tracing.ts";
@@ -122,6 +123,21 @@ export const TaskNotifierLive = Layer.effect(
   }),
 );
 
-export const TaskNotifierNoop = Layer.succeed(TaskNotifier, {
-  taskCreated: () => Effect.void,
+export interface RecordedNotification {
+  readonly task: Task;
+  readonly owner: User;
+}
+
+const recordInto = (calls: Ref.Ref<ReadonlyArray<RecordedNotification>>): TaskNotifierService => ({
+  taskCreated: (task, owner) => Ref.update(calls, (recorded) => [...recorded, { task, owner }]),
 });
+
+export const makeTaskNotifierMemory = Effect.gen(function* () {
+  const calls = yield* Ref.make<ReadonlyArray<RecordedNotification>>([]);
+  return { calls, layer: Layer.succeed(TaskNotifier, recordInto(calls)) } as const;
+});
+
+export const TaskNotifierMemory = Layer.effect(
+  TaskNotifier,
+  Effect.map(Ref.make<ReadonlyArray<RecordedNotification>>([]), recordInto),
+);

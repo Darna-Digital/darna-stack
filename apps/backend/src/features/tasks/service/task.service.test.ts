@@ -3,7 +3,7 @@ import { it } from "@effect/vitest";
 import { Effect, Layer, Ref } from "effect";
 import { Tasks } from "./task.service.ts";
 import { TasksMemory } from "../layer/task.layer.memory.ts";
-import { TaskNotifier } from "../workflow/task-notification.workflow.ts";
+import { TaskNotifier, makeTaskNotifierMemory } from "../workflow/task-notification.workflow.ts";
 import { CurrentUser, type User } from "../../auth/current-user.ts";
 import type { Project, ProjectId } from "../../projects/schema/project.schema.model.ts";
 import type { Task, TaskId } from "../schema/task.schema.model.ts";
@@ -92,18 +92,9 @@ describe("Tasks.create", () => {
 });
 
 describe("Tasks.create notifies the owner", () => {
-  const recorder = () =>
-    Effect.gen(function* () {
-      const calls = yield* Ref.make<ReadonlyArray<{ task: Task; owner: User }>>([]);
-      const layer = Layer.succeed(TaskNotifier, {
-        taskCreated: (task: Task, owner: User) => Ref.update(calls, (c) => [...c, { task, owner }]),
-      });
-      return { calls, layer };
-    });
-
   it.effect("triggers the notifier with the created task and current user", () =>
     Effect.gen(function* () {
-      const { calls, layer } = yield* recorder();
+      const { calls, layer } = yield* makeTaskNotifierMemory;
       const created = yield* Effect.gen(function* () {
         const tasks = yield* Tasks;
         return yield* tasks.create("p-alice" as ProjectId, { title: "Buy milk" });
@@ -119,7 +110,7 @@ describe("Tasks.create notifies the owner", () => {
 
   it.effect("does not notify when creation is refused", () =>
     Effect.gen(function* () {
-      const { calls, layer } = yield* recorder();
+      const { calls, layer } = yield* makeTaskNotifierMemory;
       const error = yield* Effect.gen(function* () {
         const tasks = yield* Tasks;
         return yield* Effect.flip(tasks.create("p-bob" as ProjectId, { title: "nope" }));

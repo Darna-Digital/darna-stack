@@ -2,7 +2,7 @@ import * as Layer from "effect/Layer";
 import type { Project } from "../../projects/schema/project.schema.model.ts";
 import { ProjectRepository } from "../../projects/repository/project.repository.ts";
 import { makeMemoryProjectRepository } from "../../projects/repository/project.repository.memory.ts";
-import { TaskNotifier, TaskNotifierNoop } from "../workflow/task-notification.workflow.ts";
+import { TaskNotifier, TaskNotifierMemory } from "../workflow/task-notification.workflow.ts";
 import type { Task } from "../schema/task.schema.model.ts";
 import { TaskRepository } from "../repository/task.repository.ts";
 import { makeMemoryTaskRepository } from "../repository/task.repository.memory.ts";
@@ -11,7 +11,7 @@ import { Tasks } from "../service/task.service.ts";
 export const TasksMemory = ({
   projects = [],
   tasks = [],
-  notifier = TaskNotifierNoop,
+  notifier = TaskNotifierMemory,
 }: {
   projects?: readonly Project[];
   tasks?: readonly Task[];
