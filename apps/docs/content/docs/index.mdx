@@ -3,44 +3,66 @@ title: Architecture
 description: How the darna-stack monorepo fits together.
 ---
 
-A pnpm monorepo with three deployable apps. Everything ships to Cloudflare
-Workers — backend natively, the Next.js apps via OpenNext. Auth crosses every
-boundary: WorkOS issues access tokens, the backend verifies them.
+A pnpm monorepo with two deployable apps plus this docs site. Everything runs
+on Cloudflare Workers. The backend is an Effect 4 app; the web client is
+Next.js 16. There's no separate identity provider — auth lives inside the
+backend — and the web client only ever talks to the backend.
 
 ## Layout
 
 ```text
 darna-stack/
 ├── apps/
-│   ├── backend/       Hono + Effect HttpApi on :4000 (wrangler dev)
-│   ├── admin/         Next.js 16 admin panel on :3000
-│   ├── web-client/    Next.js 16 client app on :7001
-│   └── docs/          Fumadocs site on :3001 (this app)
-├── infra/             deploy notes, env templates
-├── package.json       workspace root
+│   ├── backend/       Effect 4 HttpApi on Workers, :1337 (alchemy dev)
+│   ├── web-client/    Next.js 16, :7001
+│   └── docs/          Fumadocs site, :3001 (this app)
+├── infra/             deploy notes
+├── packages/lint/     shared eslint + prettier config
 └── pnpm-workspace.yaml
 ```
 
-## Request flow
+## How a request flows
 
 ```mermaid
-flowchart TD
-  WorkOS[WorkOS<br/>hosted sign-in, JWKS]
-  Admin[admin :3000<br/>Next 16 + AuthKit]
-  Web[web-client :7001<br/>Next 16 + openapi-react-query]
-  Backend[backend :4000<br/>Hono + Effect HttpApi]
+flowchart LR
+  Web["web-client :7001<br/>Next 16"]
+  Backend["backend :1337<br/>Effect 4 on Workers"]
+  DB[("PlanetScale Postgres<br/>via Hyperdrive")]
 
-  Admin -- "OAuth callback" --> WorkOS
-  WorkOS -- "JWKS verify" --> Backend
-  Admin -- "Authorization: Bearer &lt;token&gt;" --> Backend
+  Web -- "better-auth client (cookie session)" --> Backend
   Web -- "openapi-fetch (typed)" --> Backend
+  Backend -- "@effect/sql" --> DB
 ```
 
-The admin obtains a WorkOS access token via AuthKit and forwards it as
-`Authorization: Bearer …`. The backend's `Authentication` middleware
-verifies the JWT against the WorkOS JWKS for the same `WORKOS_CLIENT_ID`.
-The web-client talks to the same backend through a generated, fully-typed
-client.
+The web client signs in through better-auth, which the backend mounts at
+`/api/auth/*`. The session is a cookie; every API call sends it with
+`credentials: "include"`. Calls go through a fully-typed client generated from
+the backend's OpenAPI spec. Postgres is reached over `@effect/sql` through a
+Cloudflare Hyperdrive binding that points at a PlanetScale database.
+
+## Conventions
+
+- **Package names** — `@darna/backend`, `@darna/docs`, and `web-client`
+  (unscoped). Filters use these: `pnpm --filter @darna/backend …`.
+- **Ports** — backend `1337`, web-client `7001`, docs `3001`. Hardcoded in each
+  `dev` script so `pnpm dev` (parallel) doesn't collide.
+- **Infra as code** — the backend's Cloudflare resources (Worker, Hyperdrive,
+  R2, the PlanetScale database, the notification Workflow) are declared in
+  `apps/backend/alchemy.run.ts` and applied by [Alchemy](https://alchemy.run).
+  The Next.js apps deploy through OpenNext.
+- **Effect on the backend** — services and their dependencies are wired with
+  Effect `Layer`s. The HTTP surface is `HttpApi` from
+  `effect/unstable/httpapi`; repositories use `@effect/sql`.
+- **Env files** — `apps/backend/.env` and `apps/web-client/.env.local`, both
+  gitignored. Production config is set on the Workers at deploy time.
+
+## Scripts (repo root)
+
+| Command          | What it does                    |
+| ---------------- | ------------------------------- |
+| `pnpm dev`       | All apps in parallel            |
+| `pnpm typecheck` | `tsc --noEmit` in every package |
+| `pnpm deploy`    | Deploy every app to Cloudflare  |
 
 ## Sections
 
@@ -48,60 +70,31 @@ client.
   <Card
     title="Local dev"
     href="/docs/local-dev"
-    description="Clone, set up .env, run wrangler dev. Fifteen minutes."
+    description="Install, fill in .env, run pnpm dev."
   />
   <Card
     title="Backend"
     href="/docs/backend"
-    description="HttpApi composition, feature modules, the Worker entrypoint."
-  />
-  <Card
-    title="Web client"
-    href="/docs/web-client"
-    description="OpenAPI codegen plus openapi-react-query. End-to-end type safety."
+    description="Effect HttpApi, feature slices, @effect/sql, the Alchemy Worker."
   />
   <Card
     title="Auth"
     href="/docs/auth"
-    description="WorkOS handshake end-to-end. What lives where."
+    description="better-auth, cookie sessions, the Authentication middleware."
   />
   <Card
-    title="Admin"
-    href="/docs/admin"
-    description="Next.js 16 with AuthKit. Edge middleware on every route."
+    title="Web client"
+    href="/docs/web-client"
+    description="OpenAPI codegen + openapi-react-query. End-to-end types."
   />
   <Card
     title="Tracing"
     href="/docs/tracing"
-    description="OpenTelemetry to Grafana via @microlabs/otel-cf-workers."
+    description="OpenTelemetry from Effect spans, exported to Grafana."
   />
   <Card
     title="Deploy"
     href="/docs/deploy"
-    description="Wrangler for backend, OpenNext for the Next.js apps."
+    description="Alchemy for the backend, OpenNext for the Next.js apps."
   />
 </Cards>
-
-## Conventions
-
-- **Package names** — `@darna/backend`, `@darna/admin`, `@darna/docs`,
-  `web-client`. Workspace filters use these (`pnpm --filter @darna/backend …`).
-- **Ports** — backend `4000`, admin `3000`, docs `3001`, web-client `7001`.
-  Hardcoded in each `dev` script so `pnpm dev` (parallel) doesn't collide.
-- **Wrangler** — every deployable app has its own `wrangler.jsonc`.
-  `compatibility_date` is the same across all of them.
-- **Env files** — `apps/backend/.env` (read by `wrangler dev --env-file=.env`),
-  `apps/<next-app>/.env.local` (read by `next dev`). All gitignored, all
-  with a `.example` next to them. Production secrets go through
-  `wrangler secret put`.
-- **Effect** — backend code uses Effect `Service` + `Layer` for DI. HTTP
-  surface is `@effect/platform`'s `HttpApi`. One `TracingLayer` provides
-  the global OTel tracer.
-
-## Top-level scripts
-
-| Command          | What it does                                 |
-| ---------------- | -------------------------------------------- |
-| `pnpm dev`       | All apps in parallel                         |
-| `pnpm typecheck` | Recursive `tsc --noEmit`                     |
-| `pnpm deploy`    | Backend → admin → docs to Cloudflare Workers |

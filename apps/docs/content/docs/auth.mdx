@@ -1,144 +1,97 @@
 ---
 title: Auth
-description: How the WorkOS handshake works across admin and backend.
+description: better-auth runs inside the backend. Email/password, cookie sessions, verified by a middleware.
 ---
 
-WorkOS AuthKit handles sign-in for the admin app. The backend doesn't talk to
-WorkOS at all at runtime — it just verifies tokens against the public JWKS.
+Auth is [better-auth](https://better-auth.com), mounted inside the backend at
+`/api/auth/*`. There's no external identity provider. The web client signs in
+through better-auth's React client; the session is a cookie; protected API
+groups verify it with an Effect middleware.
 
-## Flow
+## The pieces
 
-<Steps>
+| Concern              | Where                                                                |
+| -------------------- | -------------------------------------------------------------------- |
+| Auth instance        | `features/auth/better-auth.ts` — `makeAuth(...)`                     |
+| Auth routes          | `/api/auth/*`, handled in `worker.ts`                                |
+| Session lookup       | `/api/me` returns the current user or `null`                         |
+| Route protection     | `features/auth/auth.middleware.ts` + `.live.ts`                      |
+| Web client           | `apps/web-client/lib/auth-client.ts` — `createAuthClient`            |
 
-<Step>
+## How it works
 
-### Browser hits a protected route
+better-auth owns sign-up, sign-in, email verification, and password reset.
+`makeAuth` configures email/password with a Drizzle adapter over the same
+Postgres pool (the `user`, `session`, `account`, `verification` tables), and
+sends verification and reset emails through the backend's email layer:
 
-`apps/admin/src/middleware.ts` runs `authkitMiddleware` with
-`middlewareAuth.enabled = true`. No session cookie → 307 to
-`https://api.workos.com/user_management/authorize?…&client_id=…&redirect_uri=http://localhost:3000/callback&…`.
-
-(Why not `proxy.ts`? Next 16 hard-codes the new `proxy.ts` file convention to
-the Node runtime, but OpenNext for Cloudflare can only host Edge middleware.
-The deprecated `middleware.ts` filename still accepts `runtime:
-"experimental-edge"` in Next 16, so we use that.)
-
-</Step>
-
-<Step>
-
-### User signs in at WorkOS
-
-Hosted UI. WorkOS redirects back to `/callback?code=…&state=…`.
-
-</Step>
-
-<Step>
-
-### Callback exchanges the code
-
-`apps/admin/src/app/callback/route.ts` is just `export const GET = handleAuth()`.
-The package exchanges the code at `https://api.workos.com/sso/token` using
-`WORKOS_API_KEY`, gets back an access token + refresh token + user, seals
-them into a cookie with `WORKOS_COOKIE_PASSWORD` (iron-session), and 307s
-to the originally-requested path.
-
-</Step>
-
-<Step>
-
-### Server component reads the session
-
-```tsx
-const { user, accessToken } = await withAuth({ ensureSignedIn: true });
-```
-
-AuthKit unseals the cookie, refreshes the access token if it's near expiry,
-and returns a typed `user` plus a short-lived JWT.
-
-</Step>
-
-<Step>
-
-### Admin calls backend with Bearer token
-
-```tsx
-fetch(`${BACKEND_URL}/admin/me`, {
-  headers: { Authorization: `Bearer ${accessToken}` },
+```ts
+return betterAuth({
+  baseURL: cfg.baseURL,
+  basePath: "/api/auth",
+  trustedOrigins: [cfg.webClientUrl],
+  database: drizzleAdapter(db, { provider: "pg", schema: authSchema }),
+  emailAndPassword: { enabled: true, sendResetPassword: /* … */ },
+  emailVerification: { sendOnSignUp: true, sendVerificationEmail: /* … */ },
+  advanced: { /* cookie SameSite/secure, optional cross-subdomain */ },
 });
 ```
 
-</Step>
-
-<Step>
-
-### Backend verifies against JWKS
-
-The backend declares an `Authentication` middleware tag in
-[`features/admin/admin.auth.ts`](https://github.com/darnadigital/darna-stack/blob/master/apps/backend/src/features/admin/admin.auth.ts) and binds it to a bearer scheme.
-The implementation in [`admin.handlers.ts`](https://github.com/darnadigital/darna-stack/blob/master/apps/backend/src/features/admin/admin.handlers.ts) calls `verifyWorkOSAccessToken(token)`,
-which uses `jose`:
+The browser calls these through the web client's auth client, which talks to
+the backend with `credentials: "include"` so the session cookie is set and sent
+cross-origin:
 
 ```ts
-const jwks = createRemoteJWKSet(new URL(`https://api.workos.com/sso/jwks/${WORKOS_CLIENT_ID}`));
-const { payload } = await jwtVerify(token, jwks);
-return payload;
+// apps/web-client/lib/auth-client.ts
+export const authClient = createAuthClient({
+  baseURL,                                  // → appends /api/auth
+  fetchOptions: { credentials: "include" },
+});
+export const { signIn, signUp, signOut, useSession } = authClient;
 ```
 
-The verified payload becomes the `CurrentUser` service for the duration
-of the request. Endpoint handlers read it via `yield* CurrentUser`.
-Failure short-circuits to a 401 `Unauthorized`. JWKS is cached after the
-first call — no round-trip to WorkOS per request.
+## Protecting a route
 
-</Step>
+A group opts in with `.middleware(Authentication)`. The middleware is declared
+as an `HttpApiMiddleware` whose security is the `better-auth.session_token`
+cookie, and which provides a `CurrentUser` to handlers:
 
-</Steps>
+```ts
+// features/auth/auth.middleware.ts
+export class Authentication extends HttpApiMiddleware.Service<
+  Authentication,
+  { provides: CurrentUser }
+>()("Authentication", {
+  error: NotAuthenticated,                  // → 401
+  security: { cookie: HttpApiSecurity.apiKey({ in: "cookie", key: "better-auth.session_token" }) },
+}) {}
+```
 
-## What lives where
+The live implementation resolves the cookie into a user via
+`auth.api.getSession(...)`, failing with a 401 when there's no valid session:
 
-| Concern                   | Owner   | File                                                          |
-| ------------------------- | ------- | ------------------------------------------------------------- |
-| Session cookie            | Admin   | sealed via `iron-session` in `handleAuth()`                   |
-| Access token issuance     | WorkOS  | code exchange at `/sso/token`                                 |
-| Access token verification | Backend | `verifyWorkOSAccessToken` in `lib/auth/workos.ts`             |
-| Per-request user object   | Admin   | `withAuth({ ensureSignedIn: true })`                          |
-| Per-request user object   | Backend | `yield* CurrentUser` inside an `Authentication`-guarded group |
+```ts
+// features/auth/auth.middleware.live.ts
+export const AuthenticationLive = Layer.succeed(Authentication, {
+  cookie: (httpEffect, { credential }) =>
+    resolveUser(credential).pipe(
+      Effect.flatMap((user) => Effect.provideService(httpEffect, CurrentUser, user)),
+    ),
+});
+```
 
-## The two clients
+Inside any handler in a protected group, read the user with `yield* CurrentUser`.
 
-- **Admin** uses `WORKOS_API_KEY` (server-only, code-exchange auth) and
-  `WORKOS_CLIENT_ID` (public-ish, identifies the application).
-- **Backend** uses only `WORKOS_CLIENT_ID` — that's enough to fetch the JWKS
-  and verify signatures. No API key needed unless you start calling the
-  WorkOS REST API directly.
+## Cross-domain cookies
 
-The two `WORKOS_CLIENT_ID` values must match. That's the load-bearing
-piece — if they drift, every request to `/admin/me` returns 401.
+In production the web client and backend sit on different subdomains, so the
+session cookie has to cross domains. `makeAuth` switches cookie attributes based
+on the backend URL: `SameSite=None; Secure; Partitioned` over HTTPS, plus
+optional `crossSubDomainCookies` when `AUTH_COOKIE_DOMAIN` is set. Locally
+(plain HTTP) it falls back to `SameSite=Lax`.
 
 <Callout type="info">
-  WorkOS access tokens are short-lived (~5 min). AuthKit's session cookie carries a longer-lived
-  refresh token and exchanges it transparently when `withAuth()` is called. You don't have to think
-  about token expiry in the admin code.
+  Locally, `BETTER_AUTH_URL` must match the URL the worker is served on and
+  `WEB_CLIENT_URL` must be the browser's origin. If they drift, the cookie won't
+  stick and every protected call returns 401.
 </Callout>
-
-## Adding a new protected route
-
-**Backend** — declare an `HttpApiGroup` and chain `.middleware(Authentication)`:
-
-```ts
-// features/<thing>/http/<thing>.api.ts
-export class ThingApi extends HttpApiGroup.make("thing")
-  .add(HttpApiEndpoint.get("get", "/things/:id").setPath(IdParam).addSuccess(Thing))
-  .middleware(Authentication) {}
-```
-
-Then add it to `Api` in [`src/api.ts`](https://github.com/darnadigital/darna-stack/blob/master/apps/backend/src/api.ts) and provide the handlers in
-[`server.ts`](https://github.com/darnadigital/darna-stack/blob/master/apps/backend/src/server.ts). Inside a handler, read the verified user via
-`yield* CurrentUser`.
-
-**Admin** — already protected by `middleware.ts`. Call `withAuth()` and
-forward `accessToken`:
-
-```tsx
-const { accessToken } = await withAuth({ ensureSignedIn: true });
-```

@@ -1,8 +1,11 @@
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
-import { sendEmail } from "../../../../layers/email.layer.ts";
-import { withWorkflowTracing } from "../../../../observability/tracing.ts";
+import * as Layer from "effect/Layer";
+import type { User } from "../../auth/current-user.ts";
+import { sendEmail } from "../../../layers/email.layer.ts";
+import { withWorkflowTracing } from "../../../observability/tracing.ts";
+import type { Task } from "../schema/task.schema.model.ts";
 
 export interface TaskNotificationInput {
   readonly taskId: string;
@@ -18,8 +21,6 @@ export interface TaskNotificationResult {
   readonly reminded: boolean;
 }
 
-const REMINDER_DELAY = "1 hour";
-
 const runTaskNotification = (input: TaskNotificationInput) =>
   Effect.gen(function* () {
     yield* Cloudflare.task(
@@ -28,7 +29,7 @@ const runTaskNotification = (input: TaskNotificationInput) =>
         sendEmail({
           to: input.ownerEmail,
           subject: `Task added: ${input.title}`,
-          text: `Hey ${input.ownerName},\n\nYour task "${input.title}" was added. We'll send a reminder in ${REMINDER_DELAY} if it's still open.`,
+          text: `Hi ${input.ownerName},\n\nYour task "${input.title}" was added. We'll send a reminder if it's still open.`,
         }),
       ).pipe(
         Effect.withSpan("step.notify-created", {
@@ -37,7 +38,7 @@ const runTaskNotification = (input: TaskNotificationInput) =>
       ),
     );
 
-    yield* Cloudflare.sleep("reminder-delay", REMINDER_DELAY);
+    yield* Cloudflare.sleep("reminder-delay", "10 seconds");
 
     yield* Cloudflare.task(
       "send-reminder",
@@ -80,3 +81,47 @@ export class TaskNotificationWorkflowService extends Context.Service<
   TaskNotificationWorkflowService,
   Cloudflare.WorkflowHandle<TaskNotificationInput, TaskNotificationResult>
 >()("TaskNotificationWorkflowService") {}
+
+export interface TaskNotifierService {
+  readonly taskCreated: (task: Task, owner: User) => Effect.Effect<void>;
+}
+
+export class TaskNotifier extends Context.Service<TaskNotifier, TaskNotifierService>()(
+  "TaskNotifier",
+) {}
+
+export const TaskNotifierLive = Layer.effect(
+  TaskNotifier,
+  Effect.gen(function* () {
+    const workflow = yield* TaskNotificationWorkflowService;
+
+    return {
+      taskCreated: (task, owner) =>
+        workflow
+          .create({
+            taskId: task.id,
+            title: task.title,
+            projectId: task.projectId,
+            ownerEmail: owner.email,
+            ownerName: owner.name,
+          })
+          .pipe(
+            Effect.flatMap((instance) =>
+              Effect.logInfo("Started task-notification workflow").pipe(
+                Effect.annotateLogs({
+                  "workflow.instance_id": instance.id,
+                  "task.id": task.id,
+                }),
+              ),
+            ),
+            Effect.catchCause((cause) =>
+              Effect.logError("Failed to start task-notification workflow", cause),
+            ),
+          ),
+    };
+  }),
+);
+
+export const TaskNotifierNoop = Layer.succeed(TaskNotifier, {
+  taskCreated: () => Effect.void,
+});

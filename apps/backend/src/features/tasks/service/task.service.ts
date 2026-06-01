@@ -6,7 +6,7 @@ import {
   ProjectNotFound,
   type ProjectId,
 } from "../../projects/schema/project.schema.model.ts";
-import { TaskNotifier } from "../workflow/notifier/task-notifier.ts";
+import { TaskNotifier } from "../workflow/task-notification.workflow.ts";
 import { TaskRepository } from "../repository/task.repository.ts";
 import { TaskNotFound, type Task, type TaskId } from "../schema/task.schema.model.ts";
 import type { CreateTask, UpdateTask } from "../schema/task.schema.requests.ts";

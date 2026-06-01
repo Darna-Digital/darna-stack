@@ -3,7 +3,7 @@ import { it } from "@effect/vitest";
 import { Effect, Layer, Ref } from "effect";
 import { Tasks } from "./task.service.ts";
 import { TasksMemory } from "../layer/task.layer.memory.ts";
-import { TaskNotifier } from "../workflow/notifier/task-notifier.ts";
+import { TaskNotifier } from "../workflow/task-notification.workflow.ts";
 import { CurrentUser, type User } from "../../auth/current-user.ts";
 import type { Project, ProjectId } from "../../projects/schema/project.schema.model.ts";
 import type { Task, TaskId } from "../schema/task.schema.model.ts";

@@ -1,120 +1,57 @@
 ---
 title: Deploy
-description: All three apps target Cloudflare Workers. Backend native, Next.js apps via OpenNext.
+description: Backend via Alchemy, the Next.js apps via OpenNext. Everything lands on Cloudflare Workers.
 ---
 
-Every app has its own `wrangler.jsonc` next to its source. Wrangler resolves
-paths relative to that file — the monorepo root doesn't get involved.
+Every app deploys to Cloudflare Workers, by two different paths. The backend's
+infrastructure is declared as code and applied by Alchemy. The Next.js apps are
+compiled into Workers by OpenNext.
 
 ## Targets
 
-| App              | Adapter                       | Entry                  |
-| ---------------- | ----------------------------- | ---------------------- |
-| `@darna/backend` | native (Hono is fetch-native) | `src/worker.ts`        |
-| `@darna/admin`   | `@opennextjs/cloudflare`      | `.open-next/worker.js` |
-| `@darna/docs`    | `@opennextjs/cloudflare`      | `.open-next/worker.js` |
-
-Pages was deprecated for new Next.js deployments. OpenNext compiles a
-Next.js app into a single Worker plus a static-asset binding.
-
-## Prerequisites
-
-- Node ≥ 22 (Wrangler v4 requires it).
-- A Cloudflare account.
-- `wrangler login` once, or `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`
-  in CI.
+| App              | Tool                          | Command                          |
+| ---------------- | ----------------------------- | -------------------------------- |
+| `@darna/backend` | [Alchemy](https://alchemy.run)| `alchemy deploy`                 |
+| `web-client`     | `@opennextjs/cloudflare`      | `opennextjs-cloudflare deploy`   |
+| `@darna/docs`    | `@opennextjs/cloudflare`      | `opennextjs-cloudflare deploy`   |
 
 ## Commands
 
 ```bash
-pnpm deploy             # backend → admin → docs
-pnpm deploy:backend     # individually
-pnpm deploy:admin
+pnpm deploy             # backend → docs → web-client
+pnpm deploy:backend     # or individually
 pnpm deploy:docs
-
-# Next.js local Workers preview (closer-to-prod than `next dev`)
-pnpm --filter @darna/admin preview
-pnpm --filter @darna/docs  preview
-# `pnpm dev:backend` already runs the real Workers runtime via wrangler dev.
+pnpm deploy:web-client
 ```
 
-First deploy of each Worker creates a `*.workers.dev` subdomain. No DNS or
-custom domain needed.
+For the Next.js apps, `pnpm --filter <app> preview` builds and serves the
+OpenNext output locally — closer to production than `next dev`.
 
-## The pnpm + Turbopack gotcha
+## Backend (Alchemy)
 
-OpenNext invokes `next build` with `NEXT_PRIVATE_OUTPUT_TRACE_ROOT` set to
-the app directory. That overrides `turbopack.root`, which means Turbopack
-can't follow the symlink from `apps/admin/node_modules/next` into
-`node_modules/.pnpm/next@…/`.
+`apps/backend/alchemy.run.ts` declares the whole backend as a stack: the Worker,
+a Hyperdrive binding, an R2 bucket, the PlanetScale Postgres database (with a
+migration branch), and the notification Workflow. `alchemy deploy` reconciles
+that declaration against Cloudflare and PlanetScale — provisioning what's
+missing, applying new migrations, and pushing the Worker.
 
-Fix: pin `turbopack.root` to the monorepo root in each Next.js app.
+Alchemy needs credentials for both Cloudflare and PlanetScale; see its
+[docs](https://alchemy.run) for how they're supplied. `alchemy destroy` tears
+the stack back down.
 
-```ts
-// apps/admin/next.config.ts
-import path from "node:path";
+## Next.js apps (OpenNext)
 
-const nextConfig: NextConfig = {
-  turbopack: {
-    root: path.resolve(process.cwd(), "../.."),
-  },
-};
-```
+OpenNext compiles a Next.js app into a single Worker plus a static-asset
+binding, configured by each app's `wrangler.jsonc`.
 
-```js
-// apps/docs/next.config.mjs
-const config = {
-  turbopack: {
-    root: path.resolve(import.meta.dirname, "../.."),
-  },
-};
-```
+One gotcha on a pnpm monorepo: no stray lockfiles. `create-next-app` writes a
+`pnpm-lock.yaml` inside the app before it knows it's in a workspace, and
+OpenNext's packager detection stops at the first lockfile it finds — so it
+thinks each app is its own repo. The root lockfile is the only one that should
+exist; delete any others.
 
-<Callout type="warn">
-  Don't use `import.meta.dirname` in `next.config.ts`. Next compiles `.ts` configs to CommonJS, but
-  referencing `import.meta` forces ESM output and the compiled file then collides with `exports`.
-  `process.cwd()` works in TS configs; `import.meta.dirname` works in `.mjs`.
-</Callout>
+## Local dev against the edge
 
-The other foot-gun is stray per-app `pnpm-lock.yaml` files. `create-next-app`
-and `create-hono` write one before they know they're inside a workspace.
-OpenNext's `findPackagerAndRoot` stops at the first lockfile it finds, so
-those strays make it think each app is its own monorepo. Delete them — the
-root lockfile is the only one that should exist.
-
-## Environment
-
-- **Non-secret config** — `vars` block in `wrangler.jsonc`.
-- **Secrets** — `wrangler secret put NAME` from the app directory (and again
-  with `--env staging` for staging).
-- **Local dev** — `apps/backend/.env`. Read by `wrangler dev --env-file=.env`
-  for both wrangler CLI vars and Worker bindings, and by drizzle-kit /
-  migrate via Node's `--env-file-if-exists`. Next.js apps use
-  `apps/<app>/.env.local`.
-
-## Cloudflare credentials
-
-For interactive use:
-
-```bash
-pnpm --filter @darna/backend exec wrangler login
-```
-
-Saves a token in `~/.config/.wrangler/`. One login covers all three apps.
-
-For CI, create a token at
-[dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens)
-using the **Edit Cloudflare Workers** template, then export
-`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
-
-## Custom domains
-
-Add a `routes` block to the relevant `wrangler.jsonc`:
-
-```jsonc
-"routes": [
-  { "pattern": "api.example.com", "custom_domain": true }
-]
-```
-
-The zone has to already be on Cloudflare and in your account.
+`pnpm --filter @darna/backend dev:remote` redeploys the backend Worker on every
+save, so you can run the web client against the real edge backend instead of a
+local one. See [Local dev](/docs/local-dev).

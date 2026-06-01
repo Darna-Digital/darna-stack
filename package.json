@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "pnpm -r --parallel run dev",
     "dev:backend": "pnpm --filter @darna/backend dev",
-    "dev:admin": "pnpm --filter @darna/admin dev",
     "dev:docs": "pnpm --filter @darna/docs dev",
     "dev:web-client": "pnpm --filter web-client dev",
     "build": "pnpm -r run build",
@@ -14,9 +13,8 @@
     "typecheck": "pnpm -r run typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "deploy": "pnpm --filter @darna/backend run deploy && pnpm --filter @darna/admin run deploy && pnpm --filter @darna/docs run deploy && pnpm --filter web-client run deploy",
+    "deploy": "pnpm --filter @darna/backend run deploy && pnpm --filter @darna/docs run deploy && pnpm --filter web-client run deploy",
     "deploy:backend": "pnpm --filter @darna/backend run deploy",
-    "deploy:admin": "pnpm --filter @darna/admin run deploy",
     "deploy:docs": "pnpm --filter @darna/docs run deploy",
     "deploy:web-client": "pnpm --filter web-client run deploy",
     "deps:check": "pnpm outdated -r || true",

@@ -21,7 +21,7 @@ import { makeAuth, setAuthInstance } from "./features/auth/better-auth.ts";
 import { AuthenticationLive } from "./features/auth/auth.middleware.live.ts";
 import TaskNotificationWorkflow, {
   TaskNotificationWorkflowService,
-} from "./features/tasks/workflow/notifier/task-notification.workflow.ts";
+} from "./features/tasks/workflow/task-notification.workflow.ts";
 import { Hyperdrive } from "./layers/db/db-iac.ts";
 import { ensureTracingProvider, tracerBridge } from "./observability/tracing.ts";
 

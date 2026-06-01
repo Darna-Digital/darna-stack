@@ -1,167 +1,139 @@
 ---
 title: Local dev
-description: Clone, set up .env, run wrangler dev. Roughly fifteen minutes if WorkOS and Grafana are already provisioned.
+description: Install, fill in two env files, run pnpm dev.
 ---
 
-The whole stack runs locally with `pnpm dev`. Backend goes through `wrangler
-dev` (the real Workers runtime, not a Node fake), the Next.js apps through
-`next dev`. One terminal, four apps.
+`pnpm dev` runs all three apps at once. The backend runs under `alchemy dev`,
+which provisions its Cloudflare resources (Worker, Hyperdrive, R2, the
+PlanetScale database) and then serves the Worker locally against them. The
+Next.js apps run under `next dev`.
 
 ## Prerequisites
 
-- Node 22+ (Wrangler v4 requires it).
-- pnpm 10+.
-- Postgres reachable from your machine — local, Docker, or hosted. Same URL
-  is used both as `DATABASE_URL` (for migrations) and as the local override
-  for the Hyperdrive binding.
-- A WorkOS account if you plan to touch the admin app — see [Auth](/docs/auth)
-  for the variables you need.
+- Node 22+ and pnpm 10+.
+- Cloudflare and PlanetScale credentials available to Alchemy — it provisions
+  real resources on first run. See the [Alchemy docs](https://alchemy.run) for
+  how it picks up credentials.
 
-## First-time setup
+## Setup
 
 <Steps>
 
 <Step>
 
-### Install dependencies
+### Install
 
 ```bash
 pnpm install
 ```
 
-One lockfile at the repo root. If you see stray `pnpm-lock.yaml` files
-inside `apps/<app>/`, delete them — `create-next-app` and `create-hono`
-write one before they realise they're inside a workspace, and OpenNext's
-`findPackagerAndRoot` stops at the first lockfile it finds.
+One lockfile, at the repo root. If you find a stray `pnpm-lock.yaml` inside an
+`apps/<app>/` directory, delete it — `create-next-app` writes one before it
+realises it's in a workspace, and OpenNext stops at the first lockfile it
+finds.
 
 </Step>
 
 <Step>
 
-### Copy env templates
+### Backend env
+
+Create `apps/backend/.env`:
 
 ```bash
-cp apps/backend/.env.example      apps/backend/.env
-cp apps/admin/.env.local.example  apps/admin/.env.local
+BETTER_AUTH_URL=http://localhost:1337      # must match the alchemy dev worker URL
+WEB_CLIENT_URL=http://localhost:7001       # CORS + trusted origin for auth
+BETTER_AUTH_SECRET=...                      # any random string for local dev
+
+# Optional — tracing is off unless both are set
+OTEL_EXPORTER_OTLP_ENDPOINT=
+GRAFANA_OTEL_AUTH_HEADER=
 ```
 
-Fill in the values. The backend `.env` template documents each variable
-inline. The minimum to boot the backend is `DATABASE_URL` plus
-`CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` (the same value
-works for both during solo dev).
+The database connection comes from the Hyperdrive binding Alchemy sets up, so
+there's no `DATABASE_URL` to manage here.
 
 </Step>
 
 <Step>
 
-### Run migrations
+### Web client env
+
+Create `apps/web-client/.env.local`:
 
 ```bash
-pnpm --filter @darna/backend db:migrate
+NEXT_PUBLIC_API_URL=http://localhost:1337
 ```
 
-Drizzle's migrator reads `DATABASE_URL` from `apps/backend/.env`. It runs
-once and is idempotent — safe to re-run after pulling new schema.
+This points the typed API client and the auth client at the local backend.
+(It defaults to `:4000` in code, which is wrong for this stack — set it.)
 
 </Step>
 
 <Step>
 
-### Start everything
+### Run
 
 ```bash
 pnpm dev
 ```
 
-Four ports come up:
-
-| App              | URL                                    |
-| ---------------- | -------------------------------------- |
-| Backend          | http://localhost:4000                  |
-| Admin            | http://localhost:3000                  |
-| Web client       | http://localhost:7001                  |
-| Docs (this site) | http://localhost:3001                  |
-| Backend OpenAPI  | http://localhost:4000/openapi          |
-| Backend API ref  | http://localhost:4000/docs (Scalar UI) |
+| App              | URL                                 |
+| ---------------- | ----------------------------------- |
+| Backend          | http://localhost:1337               |
+| Web client       | http://localhost:7001               |
+| Docs (this site) | http://localhost:3001               |
+| OpenAPI spec     | http://localhost:1337/openapi.json  |
+| API reference    | http://localhost:1337/docs (Scalar) |
 
 </Step>
 
 </Steps>
 
-## Per-app dev commands
+## Per-app commands
 
 ```bash
-pnpm dev:backend     # wrangler dev --remote --env-file=.env --port=4000
-pnpm dev:admin       # next dev --port=3000
-pnpm dev:web-client  # next dev --port=7001
-pnpm dev:docs        # next dev --port=3001
+pnpm dev:backend     # alchemy dev   (:1337)
+pnpm dev:web-client  # next dev      (:7001)
+pnpm dev:docs        # next dev      (:3001)
 ```
 
-The backend script runs the actual Workers runtime under Miniflare —
-nodejs_compat, Hyperdrive, secrets, the lot. No more "works in dev, breaks
-on deploy" gap. `process.env` is populated from `.env`, Worker bindings
-are populated from the same file.
+`pnpm dev:backend` runs the real Workers runtime under Miniflare with the same
+bindings it gets in production, so there's no "works in dev, breaks on deploy"
+gap.
 
-We run with `--remote` so bindings (R2, etc.) hit the real Cloudflare
-resources rather than the local emulator. R2 presigned uploads in
-particular only work end-to-end against real R2: the browser PUTs to
-`*.r2.cloudflarestorage.com`, and the Worker's follow-up `head` needs to
-see the same bucket.
+## Database migrations
 
-## The single env file
+Edit `apps/backend/src/layers/db/schema.ts`, then run `alchemy dev` (or
+`deploy`). Alchemy's Drizzle integration generates the SQL into
+`src/layers/db/migrations/` and the PlanetScale branch applies it. There's no
+separate migrate step to run by hand.
 
-`apps/backend/.env` plays two roles for the backend:
+## Regenerating the typed client
 
-1. **Wrangler CLI variables.** `wrangler dev --env-file=.env` reads the file
-   and exposes its keys as `process.env.*`. That's how Hyperdrive picks up
-   `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` to point the
-   binding at your local Postgres.
-2. **Worker bindings.** Every key in the file also shows up on the `env`
-   argument inside the Worker (`env.WORKOS_CLIENT_ID`, etc.).
-
-That's it. No `.dev.vars` file. No second copy. Drizzle-kit and the migrate
-script read the same file via `tsx --env-file-if-exists=.env`.
-
-<Callout type="info">
-  Production never reads this file. Real secrets go through `wrangler secret put NAME` (and again
-  with `--env staging`). The wrangler.jsonc `vars` block holds non-secret config like
-  `OTEL_DEPLOYMENT_ENV`.
-</Callout>
-
-## Regenerating the typed web client
-
-After you change a backend route signature, the web client needs new types:
+After you change a backend route, refresh the web client's types:
 
 ```bash
-# in one terminal
-pnpm dev:backend
-
-# in another
-pnpm --filter web-client gen:api
+pnpm dev:backend                       # one terminal
+pnpm --filter web-client gen:api       # another
 ```
 
-`gen:api` hits `http://localhost:4000/openapi` and writes
-`apps/web-client/lib/api-schema.d.ts`. See [Web client](/docs/web-client) for
-how this stitches into `openapi-react-query`.
+`gen:api` reads `http://localhost:1337/openapi.json` and writes
+`apps/web-client/lib/api-schema.d.ts`. See [Web client](/docs/web-client).
+
+## Working against the deployed backend
+
+To run the web client against the edge backend instead of a local one,
+`pnpm --filter @darna/backend dev:remote` redeploys the Worker on every save;
+point `NEXT_PUBLIC_API_URL` at its `*.workers.dev` URL.
 
 ## Common stumbles
 
-**`db accessed outside of a request scope`** — you imported `db` from
-`apps/backend/src/lib/db/client.ts` and called it from module-load code
-(top-level of a file, not inside a handler). The proxy resolves the request's
-drizzle instance via `AsyncLocalStorage`; outside a request there's nothing
-to resolve. Move the call inside an Effect or an async function that runs
-during a fetch.
+**Auth 401s / cookie not sticking** — `BETTER_AUTH_URL` must match the URL the
+worker is actually served on, and `WEB_CLIENT_URL` must be the origin the
+browser loads from. A mismatch breaks CORS or the cookie's SameSite rules.
 
-**Hyperdrive complains about a missing local connection string** — wrangler
-needs `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` in
-`process.env`. Add it to `apps/backend/.env`. The same value as
-`DATABASE_URL` is fine.
+**Web client can't reach the API** — check `NEXT_PUBLIC_API_URL`. The in-code
+default is `:4000`, but the backend runs on `:1337`.
 
-**Port 4000 already in use** — usually a stale `wrangler dev` from a
-previous session. `pkill -f "wrangler dev"` and retry.
-
-**Admin returns 401 from `/api/admin/me`** — the admin's `WORKOS_CLIENT_ID`
-and the backend's `WORKOS_CLIENT_ID` must match. AuthKit signs against one,
-the backend's JWKS verifier checks against the other. See
-[Auth](/docs/auth).
+**Port 1337 already in use** — usually a stale `alchemy dev`. Kill it and retry.
