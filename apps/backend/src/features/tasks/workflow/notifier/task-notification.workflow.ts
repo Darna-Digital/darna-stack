@@ -28,7 +28,7 @@ const runTaskNotification = (input: TaskNotificationInput) =>
         sendEmail({
           to: input.ownerEmail,
           subject: `Task added: ${input.title}`,
-          text: `Hi ${input.ownerName},\n\nYour task "${input.title}" was added. We'll send a reminder in ${REMINDER_DELAY} if it's still open.`,
+          text: `Hey ${input.ownerName},\n\nYour task "${input.title}" was added. We'll send a reminder in ${REMINDER_DELAY} if it's still open.`,
         }),
       ).pipe(
         Effect.withSpan("step.notify-created", {

@@ -18,6 +18,7 @@ export interface AuthConfig {
 export const makeAuth = (cfg: AuthConfig) => {
   const pool = new Pool({ connectionString: cfg.connectionString });
   const db = drizzle({ client: pool });
+  const crossSite = cfg.baseURL.startsWith("https://");
 
   return betterAuth({
     baseURL: cfg.baseURL,
@@ -47,12 +48,15 @@ export const makeAuth = (cfg: AuthConfig) => {
         });
       },
     },
-    advanced: cfg.cookieDomain
-      ? {
-          crossSubDomainCookies: { enabled: true, domain: cfg.cookieDomain },
-          defaultCookieAttributes: { sameSite: "none", secure: true },
-        }
-      : {},
+    advanced: {
+      useSecureCookies: false,
+      ...(cfg.cookieDomain
+        ? { crossSubDomainCookies: { enabled: true, domain: cfg.cookieDomain } }
+        : {}),
+      defaultCookieAttributes: crossSite
+        ? { sameSite: "none", secure: true, partitioned: true }
+        : { sameSite: "lax", secure: false },
+    },
   });
 };
 

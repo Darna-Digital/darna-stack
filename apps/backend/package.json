@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "deploy": "alchemy deploy",
+    "deploy:remote": "alchemy deploy --env-file .env.remote",
     "dev": "alchemy dev",
+    "dev:remote": "bun run scripts/dev-remote.ts",
     "destroy": "alchemy destroy",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
