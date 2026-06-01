@@ -2,10 +2,7 @@ import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import { CurrentUser } from "../../auth/current-user.ts";
 import { ProjectRepository } from "../../projects/repository/project.repository.ts";
-import {
-  ProjectNotFound,
-  type ProjectId,
-} from "../../projects/schema/project.schema.model.ts";
+import { ProjectNotFound, type ProjectId } from "../../projects/schema/project.schema.model.ts";
 import { TaskNotifier } from "../workflow/task-notification.workflow.ts";
 import { TaskRepository } from "../repository/task.repository.ts";
 import { TaskNotFound, type Task, type TaskId } from "../schema/task.schema.model.ts";
