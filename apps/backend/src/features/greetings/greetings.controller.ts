@@ -3,7 +3,6 @@ import * as Effect from "effect/Effect";
 import { Api } from "../../api.ts";
 import type { Greeting } from "./greetings.model.ts";
 
-// In-memory store — no DB yet.
 const store: Greeting[] = [
   { id: 1, text: "Hello, Alchemy" },
   { id: 2, text: "Hello, Effect 4" },

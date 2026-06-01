@@ -18,11 +18,6 @@ const rowToProject = (r: ProjectRow): Project => ({
   createdAt: r.created_at,
 });
 
-/**
- * Postgres-backed project repository using the **raw `@effect/sql` client** (no
- * drizzle) and **no `RETURNING`** — mutate, then read the row back. Same shape
- * as the tasks repo; see `layers/db/database.layer.ts` for why raw sql.
- */
 export const makeDbProjectRepository = Effect.gen(function* () {
   const getSql = yield* RawSql;
 

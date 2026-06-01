@@ -8,11 +8,6 @@ import { CreateTaskSchema } from "../schema/task.schema.requests.ts";
 
 const ProjectParam = Schema.Struct({ projectId: ProjectId });
 
-/**
- * Tasks scoped to a parent project (Adam Wathan's nested-resource controller).
- * Every endpoint's `:projectId` is the *parent's* id; task-scoped actions live
- * in {@link TasksApi}. Requires a session.
- */
 export class ProjectTasksApi extends HttpApiGroup.make("projectTasks")
   .add(
     HttpApiEndpoint.get("index", "/projects/:projectId/tasks", {

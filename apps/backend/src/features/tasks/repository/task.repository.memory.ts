@@ -3,7 +3,6 @@ import * as Ref from "effect/Ref";
 import { TaskNotFound, type Task } from "../schema/task.schema.model.ts";
 import type { TaskRepo } from "./task.repository.ts";
 
-/** In-memory repository for unit tests — no database required. */
 export const makeMemoryTaskRepository = (seed: readonly Task[] = []) =>
   Effect.gen(function* () {
     const store = yield* Ref.make<Task[]>([...seed]);

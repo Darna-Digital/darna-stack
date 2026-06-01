@@ -8,8 +8,6 @@ import type { CreateProject, UpdateProject } from "../schema/project.schema.requ
 const make = Effect.gen(function* () {
   const repo = yield* ProjectRepository;
 
-  /** Load a project only if it belongs to the current user — otherwise
-   * `ProjectNotFound` (we don't leak the existence of others' projects). */
   const getOwned = (id: ProjectId) =>
     Effect.gen(function* () {
       const user = yield* CurrentUser;
@@ -20,7 +18,6 @@ const make = Effect.gen(function* () {
     });
 
   return {
-    /** The current user's projects — identity comes from context, not the caller. */
     mine: () =>
       Effect.gen(function* () {
         const user = yield* CurrentUser;

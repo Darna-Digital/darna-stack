@@ -5,8 +5,6 @@ import { authInstance } from "./better-auth.ts";
 import { CurrentUser, type User } from "./current-user.ts";
 import { Authentication, NotAuthenticated } from "./auth.middleware.ts";
 
-// Reads the better-auth instance synchronously (no service requirement) so the
-// middleware handler's effect only depends on the route context.
 const resolveUser = (credential: Redacted.Redacted<string>) =>
   Effect.tryPromise({
     try: () =>

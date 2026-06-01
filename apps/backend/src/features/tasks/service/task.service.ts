@@ -6,6 +6,7 @@ import {
   ProjectNotFound,
   type ProjectId,
 } from "../../projects/schema/project.schema.model.ts";
+import { TaskNotifier } from "../workflow/notifier/task-notifier.ts";
 import { TaskRepository } from "../repository/task.repository.ts";
 import { TaskNotFound, type Task, type TaskId } from "../schema/task.schema.model.ts";
 import type { CreateTask, UpdateTask } from "../schema/task.schema.requests.ts";
@@ -13,9 +14,8 @@ import type { CreateTask, UpdateTask } from "../schema/task.schema.requests.ts";
 const make = Effect.gen(function* () {
   const tasks = yield* TaskRepository;
   const projects = yield* ProjectRepository;
+  const notifier = yield* TaskNotifier;
 
-  /** A task's access is its project's access. Loads the project and fails
-   * `ProjectNotFound` unless it belongs to the current user. */
   const ensureProjectOwned = (projectId: ProjectId) =>
     Effect.gen(function* () {
       const user = yield* CurrentUser;
@@ -25,9 +25,6 @@ const make = Effect.gen(function* () {
         : Effect.fail(new ProjectNotFound({ id: projectId }));
     });
 
-  /** Load a task the current user may act on, or `TaskNotFound`. The project
-   * miss is mapped to `TaskNotFound` so the task resource never leaks project
-   * existence. */
   const ownedTask = (id: TaskId) =>
     Effect.gen(function* () {
       const user = yield* CurrentUser;
@@ -41,7 +38,6 @@ const make = Effect.gen(function* () {
     });
 
   return {
-    /** Tasks of a project the current user owns. */
     listForProject: (projectId: ProjectId) =>
       ensureProjectOwned(projectId).pipe(
         Effect.flatMap(() => tasks.list({ projectId })),
@@ -49,21 +45,23 @@ const make = Effect.gen(function* () {
       ),
 
     create: (projectId: ProjectId, input: CreateTask) =>
-      ensureProjectOwned(projectId).pipe(
-        Effect.flatMap(() => {
-          const task: Task = {
-            id: crypto.randomUUID() as TaskId,
-            title: input.title,
-            done: false,
-            projectId,
-            createdAt: new Date().toISOString(),
-          };
-          return Effect.logInfo("Creating task")
-            .pipe(Effect.annotateLogs({ "project.id": projectId, "task.title": input.title }))
-            .pipe(Effect.flatMap(() => tasks.create(task)));
-        }),
-        Effect.withSpan("Tasks.create", { attributes: { "project.id": projectId } }),
-      ),
+      Effect.gen(function* () {
+        yield* ensureProjectOwned(projectId);
+        const user = yield* CurrentUser;
+        const task: Task = {
+          id: crypto.randomUUID() as TaskId,
+          title: input.title,
+          done: false,
+          projectId,
+          createdAt: new Date().toISOString(),
+        };
+        yield* Effect.logInfo("Creating task").pipe(
+          Effect.annotateLogs({ "project.id": projectId, "task.title": input.title }),
+        );
+        const created = yield* tasks.create(task);
+        yield* notifier.taskCreated(created, user);
+        return created;
+      }).pipe(Effect.withSpan("Tasks.create", { attributes: { "project.id": projectId } })),
 
     getById: (id: TaskId) =>
       ownedTask(id).pipe(Effect.withSpan("Tasks.getById", { attributes: { "task.id": id } })),

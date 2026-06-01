@@ -1,8 +1,9 @@
 import { describe, expect } from "vitest";
 import { it } from "@effect/vitest";
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Ref } from "effect";
 import { Tasks } from "./task.service.ts";
 import { TasksMemory } from "../layer/task.layer.memory.ts";
+import { TaskNotifier } from "../workflow/notifier/task-notifier.ts";
 import { CurrentUser, type User } from "../../auth/current-user.ts";
 import type { Project, ProjectId } from "../../projects/schema/project.schema.model.ts";
 import type { Task, TaskId } from "../schema/task.schema.model.ts";
@@ -33,12 +34,15 @@ const task = (id: string, projectId: string, title: string, done = false): Task 
   createdAt: "2026-01-01T00:00:00.000Z",
 });
 
-// alice owns p-alice, bob owns p-bob
 const projects = [project("p-alice", alice.id), project("p-bob", bob.id)];
 
-const env = (opts?: { tasks?: readonly Task[]; user?: User }) =>
+const env = (opts?: {
+  tasks?: readonly Task[];
+  user?: User;
+  notifier?: Layer.Layer<TaskNotifier>;
+}) =>
   Layer.mergeAll(
-    TasksMemory({ projects, tasks: opts?.tasks ?? [] }),
+    TasksMemory({ projects, tasks: opts?.tasks ?? [], notifier: opts?.notifier }),
     Layer.succeed(CurrentUser, opts?.user ?? alice),
   );
 
@@ -84,6 +88,46 @@ describe("Tasks.create", () => {
       const error = yield* Effect.flip(tasks.create("p-bob" as ProjectId, { title: "nope" }));
       expect(tag(error)).toBe("ProjectNotFound");
     }).pipe(Effect.provide(env({ user: alice }))),
+  );
+});
+
+describe("Tasks.create notifies the owner", () => {
+  const recorder = () =>
+    Effect.gen(function* () {
+      const calls = yield* Ref.make<ReadonlyArray<{ task: Task; owner: User }>>([]);
+      const layer = Layer.succeed(TaskNotifier, {
+        taskCreated: (task: Task, owner: User) => Ref.update(calls, (c) => [...c, { task, owner }]),
+      });
+      return { calls, layer };
+    });
+
+  it.effect("triggers the notifier with the created task and current user", () =>
+    Effect.gen(function* () {
+      const { calls, layer } = yield* recorder();
+      const created = yield* Effect.gen(function* () {
+        const tasks = yield* Tasks;
+        return yield* tasks.create("p-alice" as ProjectId, { title: "Buy milk" });
+      }).pipe(Effect.provide(env({ user: alice, notifier: layer })));
+
+      const recorded = yield* Ref.get(calls);
+      expect(recorded).toHaveLength(1);
+      expect(recorded[0]!.task.id).toBe(created.id);
+      expect(recorded[0]!.task.title).toBe("Buy milk");
+      expect(recorded[0]!.owner.id).toBe(alice.id);
+    }),
+  );
+
+  it.effect("does not notify when creation is refused", () =>
+    Effect.gen(function* () {
+      const { calls, layer } = yield* recorder();
+      const error = yield* Effect.gen(function* () {
+        const tasks = yield* Tasks;
+        return yield* Effect.flip(tasks.create("p-bob" as ProjectId, { title: "nope" }));
+      }).pipe(Effect.provide(env({ user: alice, notifier: layer })));
+
+      expect(tag(error)).toBe("ProjectNotFound");
+      expect(yield* Ref.get(calls)).toHaveLength(0);
+    }),
   );
 });
 

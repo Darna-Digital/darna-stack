@@ -7,11 +7,6 @@ import { UpdateTaskSchema } from "../schema/task.schema.requests.ts";
 
 const IdParam = Schema.Struct({ id: TaskId });
 
-/**
- * Task-scoped actions (Adam Wathan's child-resource controller): every `:id` is
- * a *task's* own id. Listing/creating within a project lives in
- * {@link ProjectTasksApi}. Requires a session.
- */
 export class TasksApi extends HttpApiGroup.make("tasks")
   .add(
     HttpApiEndpoint.get("show", "/tasks/:id", {

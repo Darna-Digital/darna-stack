@@ -7,7 +7,6 @@ import { CreateProjectSchema, UpdateProjectSchema } from "../schema/project.sche
 
 const IdParam = Schema.Struct({ id: ProjectId });
 
-/** CRUD for the current user's projects. Every endpoint requires a session. */
 export class ProjectsApi extends HttpApiGroup.make("projects")
   .add(
     HttpApiEndpoint.get("index", "/projects", {

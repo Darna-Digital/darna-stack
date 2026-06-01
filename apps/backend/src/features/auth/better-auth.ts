@@ -8,7 +8,6 @@ import { sendEmail } from "../../layers/email.layer.ts";
 const authSchema = { user, session, account, verification };
 
 export interface AuthConfig {
-  /** Hyperdrive/Postgres connection string (resolved from the binding). */
   readonly connectionString: string;
   readonly secret: string;
   readonly baseURL: string;
@@ -16,25 +15,8 @@ export interface AuthConfig {
   readonly cookieDomain: string;
 }
 
-/**
- * Build the better-auth instance.
- *
- * better-auth's drizzle adapter expects a *Promise-based* drizzle db (queries
- * are `await`ed). Alchemy's `Drizzle.postgres` is *Effect-based* (queries return
- * Effects, not Promises) — handing that to the adapter makes every `await`
- * hang. So better-auth gets its own `drizzle-orm/node-postgres` db over a `pg`
- * pool on the same Hyperdrive connection string. The pool connects lazily and
- * is intentionally never closed (one per isolate).
- *
- * Cross-domain sessions: the web client is a different origin, so it's added to
- * `trustedOrigins`. In production it's a sibling subdomain, so when
- * `AUTH_COOKIE_DOMAIN` is set we share the cookie across subdomains with
- * `SameSite=None; Secure`.
- */
 export const makeAuth = (cfg: AuthConfig) => {
   const pool = new Pool({ connectionString: cfg.connectionString });
-  // drizzle 1.0-rc dropped the `schema` option (now `relations`); better-auth's
-  // adapter references the table objects directly, so the db needs no schema.
   const db = drizzle({ client: pool });
 
   return betterAuth({
@@ -45,7 +27,6 @@ export const makeAuth = (cfg: AuthConfig) => {
     database: drizzleAdapter(db, { provider: "pg", schema: authSchema }),
     emailAndPassword: {
       enabled: true,
-      // Frictionless sign-up for local dev; a verification email is still sent.
       requireEmailVerification: false,
       sendResetPassword: async ({ user: u, url }) => {
         await sendEmail({
@@ -77,10 +58,6 @@ export const makeAuth = (cfg: AuthConfig) => {
 
 export type AuthInstance = ReturnType<typeof makeAuth>;
 
-// The active instance, set by the Worker once it lazily builds better-auth (it
-// can't be a module singleton — construction needs the runtime Hyperdrive
-// connection string). The Authentication middleware reads it synchronously so
-// the middleware handler stays free of Effect service requirements.
 let active: AuthInstance | null = null;
 
 export const setAuthInstance = (instance: AuthInstance): void => {

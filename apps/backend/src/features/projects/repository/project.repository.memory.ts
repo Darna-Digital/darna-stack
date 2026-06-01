@@ -3,7 +3,6 @@ import * as Ref from "effect/Ref";
 import { ProjectNotFound, type Project } from "../schema/project.schema.model.ts";
 import type { ProjectRepo } from "./project.repository.ts";
 
-/** In-memory repository for unit tests — no database required. */
 export const makeMemoryProjectRepository = (seed: readonly Project[] = []) =>
   Effect.gen(function* () {
     const store = yield* Ref.make<Project[]>([...seed]);

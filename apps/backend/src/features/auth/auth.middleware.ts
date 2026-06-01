@@ -8,11 +8,6 @@ export class NotAuthenticated extends Schema.TaggedErrorClass<NotAuthenticated>(
   { httpApiStatus: 401 },
 ) {}
 
-/**
- * Cookie-based auth guard. Extracts the better-auth session cookie and, on
- * success, provides {@link CurrentUser} to the endpoint. Apply to a group with
- * `.middleware(Authentication)`.
- */
 export class Authentication extends HttpApiMiddleware.Service<
   Authentication,
   { provides: CurrentUser }

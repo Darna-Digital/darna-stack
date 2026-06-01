@@ -20,12 +20,6 @@ const rowToTask = (r: TaskRow): Task => ({
   createdAt: r.created_at,
 });
 
-/**
- * Postgres-backed task repository using the **raw `@effect/sql` client** (no
- * drizzle) and **no `RETURNING`** — mutate, then read the row back. See
- * `layers/db/database.layer.ts` for why raw sql (the drizzle rc UPDATE/DELETE
- * builders hang under workerd). Ownership is enforced in the service, not here.
- */
 export const makeDbTaskRepository = Effect.gen(function* () {
   const getSql = yield* RawSql;
 
